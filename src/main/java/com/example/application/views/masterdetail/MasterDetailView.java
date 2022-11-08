@@ -12,6 +12,7 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.gridpro.GridPro;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -40,6 +41,7 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
     private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
 
     private final Grid<SamplePerson> grid = new Grid<>(SamplePerson.class, false);
+    //private final GridPro<SamplePerson> grid = new GridPro<SamplePerson>(SamplePerson.class);
 
     private TextField firstName;
     private TextField lastName;
@@ -71,25 +73,32 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
 
         add(splitLayout);
 
+        grid.removeAllColumns();
+
         // Configure Grid
         grid.addColumn("firstName").setAutoWidth(true);
+        populateGrid();
         grid.addColumn("lastName").setAutoWidth(true);
+        populateGrid();
         grid.addColumn("email").setAutoWidth(true);
+        populateGrid();
         grid.addColumn("phone").setAutoWidth(true);
+        populateGrid();
         grid.addColumn("dateOfBirth").setAutoWidth(true);
+        populateGrid();
         grid.addColumn("occupation").setAutoWidth(true);
+        populateGrid();
         LitRenderer<SamplePerson> importantRenderer = LitRenderer.<SamplePerson>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", important -> important.isImportant() ? "check" : "minus").withProperty("color",
                         important -> important.isImportant()
                                 ? "var(--lumo-primary-text-color)"
                                 : "var(--lumo-disabled-text-color)");
+        populateGrid();
 
         grid.addColumn(importantRenderer).setHeader("Important").setAutoWidth(true);
-
-        grid.setItems(query -> samplePersonService.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
-                .stream());
+        populateGrid();
+        populateGrid();
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -101,6 +110,8 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                 UI.getCurrent().navigate(MasterDetailView.class);
             }
         });
+
+
 
         // Configure Form
         binder = new BeanValidationBinder<>(SamplePerson.class);
@@ -116,6 +127,11 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
 
         save.addClickListener(e -> {
             try {
+
+                if(firstName.getValue().startsWith("slow")){
+                    longRunningCPUHog();
+                }
+
                 if (this.samplePerson == null) {
                     this.samplePerson = new SamplePerson();
                 }
@@ -130,6 +146,12 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
             }
         });
 
+    }
+
+    private void populateGrid() {
+        grid.setItems(query -> samplePersonService.list(
+                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
+                .stream());
     }
 
     @Override
@@ -204,5 +226,10 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         this.samplePerson = value;
         binder.readBean(this.samplePerson);
 
+    }
+
+    public void longRunningCPUHog(){
+        int busyWait = 10000;
+        samplePersonService.longServiceCall(busyWait);
     }
 }

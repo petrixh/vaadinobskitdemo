@@ -77,7 +77,8 @@ public class DashboardView extends Main {
     private Component createViewEvents() {
         // Header
         Select year = new Select();
-        year.setItems("2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021");
+        String[] years = {"2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"};
+        year.setItems(years);
         year.setValue("2021");
         year.setWidth("100px");
 

@@ -38,4 +38,10 @@ public class SamplePersonService {
         return (int) repository.count();
     }
 
+    public void longServiceCall(int nrCallsToCount) {
+        while(nrCallsToCount > 0){
+            nrCallsToCount--;
+            count();
+        }
+    }
 }

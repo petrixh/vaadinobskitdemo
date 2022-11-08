@@ -6,6 +6,7 @@ import com.example.application.components.appnav.AppNavItem;
 import com.example.application.views.about.AboutView;
 import com.example.application.views.dashboard.DashboardView;
 import com.example.application.views.helloworld.HelloWorldView;
+import com.example.application.views.imagelist.ImageListView;
 import com.example.application.views.masterdetail.MasterDetailView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -59,6 +60,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
         nav.addItem(new AppNavItem("Hello World", HelloWorldView.class, "la la-globe"));
         nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
+        nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
 
         return nav;
     }
