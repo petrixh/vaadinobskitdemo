@@ -1,6 +1,8 @@
 package com.example.application.data.service;
 
 import com.example.application.data.entity.SamplePerson;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,14 @@ public class SamplePersonService {
 
     public Page<SamplePerson> list(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    public List<SamplePerson> findAll(){
+        return repository.findAll();
+    }
+
+    public void addSamplePersons(List<SamplePerson> persons){
+        repository.saveAllAndFlush(persons);
     }
 
     public int count() {
