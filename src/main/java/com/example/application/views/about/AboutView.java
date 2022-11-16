@@ -2,11 +2,9 @@ package com.example.application.views.about;
 
 import com.example.application.data.entity.SamplePerson;
 import com.example.application.data.service.LeakyProtoInterfaceImpl;
-import com.example.application.data.service.LeakyProtoService;
 import com.example.application.data.service.SamplePersonService;
 import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.charts.model.VerticalAlign;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
@@ -21,14 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @PageTitle("About")
@@ -85,7 +79,7 @@ public class AboutView extends VerticalLayout {
     private void addUsers(int count) {
 
         long start = System.currentTimeMillis();
-        int threads = LeakyProtoInterfaceImpl.getSystemThreadCount() - 1;
+        int threads = LeakyProtoInterfaceImpl.getLeakyThingsThreadCount();
 
         logger.info("Adding {} sample persons using {} threads", count, threads);
 
@@ -124,9 +118,9 @@ public class AboutView extends VerticalLayout {
 
         cpuCooker = getCpuCooker();
 
-        int systemThreadCount = Runtime.getRuntime().availableProcessors();
+        int threadsToUse = LeakyProtoInterfaceImpl.getLeakyThingsThreadCount();
 
-        for (int i = 0; i < systemThreadCount - 1; i++) {
+        for (int i = 0; i < threadsToUse; i++) {
             cpuCooker.submit(() -> {
 
                 long end = System.currentTimeMillis();
@@ -149,8 +143,8 @@ public class AboutView extends VerticalLayout {
         ExecutorService cpucooker = (ExecutorService) VaadinSession.getCurrent().getAttribute(CPUCOOKER);
 
         if (cpucooker == null) {
-            int systemThreadCount = LeakyProtoInterfaceImpl.getSystemThreadCount();
-            cpucooker = Executors.newFixedThreadPool(systemThreadCount - 1);
+            int threadsToUse = LeakyProtoInterfaceImpl.getLeakyThingsThreadCount();
+            cpucooker = Executors.newFixedThreadPool(threadsToUse);
 
             VaadinSession.getCurrent().setAttribute(CPUCOOKER, cpucooker);
         }

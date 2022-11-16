@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -32,7 +30,7 @@ public class LeakyProtoInterfaceImpl implements LeakyProtoService {
         int bytesPerLeak = 1024 * 1024 * 1024; //1GB of ram...
 
         //Use all -1 threads of the system...
-        int endExclusive = getSystemThreadCount() - 1;
+        int endExclusive = getLeakyThingsThreadCount();
         int bytesPerThread = bytesPerLeak / endExclusive;
 
         logger.info("Using {} threads to leak {} MB of ram...", endExclusive, (bytesPerLeak / 1024 / 1024));
@@ -64,8 +62,9 @@ public class LeakyProtoInterfaceImpl implements LeakyProtoService {
         leak.clear();
     }
 
-    public static int getSystemThreadCount(){
-        return Runtime.getRuntime().availableProcessors();
+    public static int getLeakyThingsThreadCount(){
+        int systemThreads = Runtime.getRuntime().availableProcessors();
+        return systemThreads < 2 ? 1 : systemThreads - 1;
     }
 
 }
