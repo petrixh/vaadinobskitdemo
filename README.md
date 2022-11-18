@@ -2,6 +2,11 @@
 
 A test/demo setup for running kit demos. For now ObservabilityKit being the only one included.
 
+In order to run the demos, you'll need to have the appropriate Vaadin license installed. 
+On your dev system you probably already have everything installed. For a VM, you might want to 
+install one of the server (or offline, limited to 3, I think) licenses (production builds only): 
+https://vaadin.com/myaccount/licenses 
+
 Step 0 after cloning the project, run:
 
 `mvn clean package -P production`
