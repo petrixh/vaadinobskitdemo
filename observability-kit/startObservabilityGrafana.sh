@@ -3,13 +3,13 @@
 #TODO move files and paths to variables for better maintenance...
 AGENT_JAR_PATH=./observability-kit/agent/
 AGENT_JAR=vaadin-opentelemetry-javaagent-1.0.0.rc1.jar
-GRAFANA_DIR = observability-grafana-setup
+GRAFANA_DIR=observability-grafana-setup
 
 ##Exit hook for cleanup...
 onExit(){
   echo "Exit hook running..."
   cd observability-kit
-  cd $GRAFANA_DIR
+  cd "$GRAFANA_DIR"
   docker-compose down
   echo "Grafana containers brought down..."
 }
@@ -36,10 +36,14 @@ if [ -d "$GRAFANA_DIR" ]; then
 else
   echo "Cloning Grafana Docker setup..."
   git clone https://github.com/vaadin/observability-grafana-setup.git
+  cd "$GRAFANA_DIR"
+  replacement="version: \"3.7\""
+  sed -i "1s/.*/$replacement/" docker-compose.yml
+  cd ..
 fi
 
 echo "Pulling grafana images..."
-cd $GRAFANA_DIR
+cd "$GRAFANA_DIR"
 docker-compose pull
 
 echo "Starting Grafana containers..."
