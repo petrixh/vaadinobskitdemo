@@ -35,7 +35,7 @@ public class ImageListView extends Main implements HasComponents, HasStyle {
 
     public ImageListView(@Autowired LeakyProtoService leakyProtoService) {
         this.leakyProtoService = leakyProtoService;
-        constructUI();
+
         int leakyListCount = leakyProtoService.getLeakyListCount();
         purgeButton = new Button("Purge button...", e -> {
             leakyProtoService.clearLeakyList();
@@ -59,6 +59,8 @@ public class ImageListView extends Main implements HasComponents, HasStyle {
             });
         }));
         add(purgeButton);
+
+        constructUI();
 
         imageContainer.add(new ImageListViewCard("Snow mountains under stars",
             "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2" +

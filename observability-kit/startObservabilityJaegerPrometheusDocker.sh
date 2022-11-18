@@ -20,7 +20,7 @@ trap 'onExit' EXIT
 ##Bring down containers on Ctrl + c
 trap 'onExit' 2
 
-cd agent
+cd ../target
 echo "Checking for agent JAR and downloading if necessary"
 if [ -f "$AGENT_JAR" ]; then
   echo "Agent JAR already downloaded..."
@@ -28,6 +28,7 @@ else
   wget http://tools.vaadin.com/nexus/content/repositories/vaadin-prereleases/com/vaadin/observability/vaadin-opentelemetry-javaagent/1.0.0.rc1/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar
 fi
 cd ..
+cd observability-kit
 
 cd vaadin-kits-docker
 echo "Pulling containers..."

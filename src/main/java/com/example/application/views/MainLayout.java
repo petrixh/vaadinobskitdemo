@@ -57,10 +57,10 @@ public class MainLayout extends AppLayout {
         AppNav nav = new AppNav();
 
         nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
-        nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
         nav.addItem(new AppNavItem("Hello World", HelloWorldView.class, "la la-globe"));
         nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
         nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
+        nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
 
         return nav;
     }
