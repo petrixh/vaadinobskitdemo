@@ -1,4 +1,4 @@
-package com.example.application.views.masterdetail;
+package com.example.application.views.masterdetailslow;
 
 import com.example.application.data.entity.SamplePerson;
 import com.example.application.data.service.SamplePersonService;

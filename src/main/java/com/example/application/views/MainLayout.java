@@ -7,7 +7,8 @@ import com.example.application.views.about.AboutView;
 import com.example.application.views.dashboard.DashboardView;
 import com.example.application.views.helloworld.HelloWorldView;
 import com.example.application.views.imagelist.ImageListView;
-import com.example.application.views.masterdetail.MasterDetailView;
+import com.example.application.views.masterdetailopt.OptMasterDetailView;
+import com.example.application.views.masterdetailslow.MasterDetailView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Footer;
@@ -61,6 +62,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
         nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
         nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
+        nav.addItem(new AppNavItem("Opt Master-Detail", OptMasterDetailView.class, "la la-columns"));
 
         return nav;
     }

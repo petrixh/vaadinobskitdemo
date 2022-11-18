@@ -1,4 +1,4 @@
-package com.example.application.views.masterdetail;
+package com.example.application.views.masterdetailopt;
 
 import com.example.application.data.entity.SamplePerson;
 import com.example.application.data.service.SamplePersonService;
@@ -18,25 +18,26 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@PageTitle("Master-Detail")
-@Route(value = "master-detail/:samplePersonID?/:action?(edit)", layout = MainLayout.class)
+@PageTitle("Optimized Master-Detail")
+@Route(value = "opt-master-detail/:samplePersonID?/:action?(edit)", layout = MainLayout.class)
 @Uses(Icon.class)
-public class MasterDetailView extends Div implements BeforeEnterObserver {
+public class OptMasterDetailView extends Div implements BeforeEnterObserver {
 
     private final String SAMPLEPERSON_ID = "samplePersonID";
     private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
-
-//    private final Grid<SamplePerson> grid = new Grid<>(SamplePerson.class, false);
-//    //private final GridPro<SamplePerson> grid = new GridPro<SamplePerson>(SamplePerson.class);
 
     private TextField firstName;
     private TextField lastName;
@@ -55,10 +56,12 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
 
     private final SamplePersonService samplePersonService;
 
-    private FilterGrid filterGrid;
+    private OptFilterGrid optFilterGrid;
+    private ListDataProvider<SamplePerson> personsListDataProvider;
+
 
     @Autowired
-    public MasterDetailView(SamplePersonService samplePersonService) {
+    public OptMasterDetailView(SamplePersonService samplePersonService) {
         this.samplePersonService = samplePersonService;
         addClassNames("master-detail-view");
 
@@ -66,13 +69,16 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         SplitLayout splitLayout = new SplitLayout();
 
 
-
-        filterGrid = new FilterGrid(new FilterGrid.FilterGridListener() {
+        optFilterGrid = new OptFilterGrid(new OptFilterGrid.FilterGridListener() {
             @Override
             public void requestRefresh() {
-                if(!filterGrid.isFiltering()) {
-                    populateGrid();
-                }
+                populateGrid();
+
+            }
+
+            @Override
+            public void onFilter() {
+                OptMasterDetailView.this.onFilter();
             }
 
             @Override
@@ -81,12 +87,13 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                     UI.getCurrent().navigate(String.format(SAMPLEPERSON_EDIT_ROUTE_TEMPLATE, person.getId()));
                 } else {
                     clearForm();
-                    UI.getCurrent().navigate(MasterDetailView.class);
+                    UI.getCurrent().navigate(OptMasterDetailView.class);
                 }
             }
         });
 
-        filterGrid.init(samplePersonService);
+        optFilterGrid.init();
+        populateGrid();
 
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
@@ -107,10 +114,6 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         save.addClickListener(e -> {
             try {
 
-                if(firstName.getValue().startsWith("slow")){
-                    longRunningCPUHog();
-                }
-
                 if (this.samplePerson == null) {
                     this.samplePerson = new SamplePerson();
                 }
@@ -119,7 +122,7 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                 clearForm();
                 refreshGrid();
                 Notification.show("SamplePerson details stored.");
-                UI.getCurrent().navigate(MasterDetailView.class);
+                UI.getCurrent().navigate(OptMasterDetailView.class);
             } catch (ValidationException validationException) {
                 Notification.show("An exception happened while trying to store the samplePerson details.");
             }
@@ -128,13 +131,39 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
     }
 
     private void populateGrid() {
+
+
+        //Let's keep it fair and not lazy load... just optimize the UI.
+        List<SamplePerson> personList = samplePersonService.findAll();
+        personsListDataProvider = new ListDataProvider<>(personList);
+        optFilterGrid.setItems(personsListDataProvider);
+
+        List<String> firstNames = personList.stream().map(person -> person.getFirstName()).collect(Collectors.toList());
+        List<String> lastNames = personList.stream().map(person -> person.getLastName()).collect(Collectors.toList());
+        List<String> emailsList = personList.stream().map(person -> person.getEmail()).collect(Collectors.toList());
+
+        optFilterGrid.setFirstNameFilterItems(firstNames);
+        optFilterGrid.setLastNameFilterItems(lastNames);
+        optFilterGrid.setEmailNameFilterItems(emailsList);
+
+
         //Lazy loading...
 //        grid.setItems(query -> samplePersonService.list(
 //                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
 //                .stream());
 
         //Non-lazy loading
-        filterGrid.setItems(samplePersonService.findAll());
+//        optFilterGrid.setItems(samplePersonService.findAll());
+    }
+
+    public void onFilter() {
+        OptFilterGrid.FilterValues filterValues = optFilterGrid.getFilterValues();
+
+        personsListDataProvider.setFilter(
+            new PersonFilter(
+                filterValues.getFirstNameFilter(),
+                filterValues.getLastNameFilter(),
+                filterValues.getEmailFilter()));
     }
 
     @Override
@@ -146,12 +175,12 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                 populateForm(samplePersonFromBackend.get());
             } else {
                 Notification.show(
-                        String.format("The requested samplePerson was not found, ID = %s", samplePersonId.get()), 3000,
-                        Notification.Position.BOTTOM_START);
+                    String.format("The requested samplePerson was not found, ID = %s", samplePersonId.get()), 3000,
+                    Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
-                event.forwardTo(MasterDetailView.class);
+                event.forwardTo(OptMasterDetailView.class);
             }
         }
     }
@@ -193,11 +222,11 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         Div wrapper = new Div();
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
-        wrapper.add(filterGrid);
+        wrapper.add(optFilterGrid);
     }
 
     private void refreshGrid() {
-        filterGrid.refreshGrid();
+        optFilterGrid.refreshGrid();
     }
 
     private void clearForm() {
@@ -210,8 +239,34 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
 
     }
 
-    public void longRunningCPUHog(){
-        int busyWait = 10000;
-        samplePersonService.longServiceCall(busyWait);
+    // A shame we don't have the handy simple filter helper API's anymore
+    // but this is a simplified version of the examples in our docs...
+    private static class PersonFilter implements SerializablePredicate<SamplePerson> {
+
+        private String firstName;
+        private String lastName;
+        private String email;
+
+        public PersonFilter(String firstName, String lastName, String email) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+        }
+
+        @Override
+        public boolean test(SamplePerson person) {
+            boolean matchesFullName = matches(person.getFirstName(), firstName);
+            boolean matchesProfession = matches(person.getLastName(),
+                lastName);
+            boolean matchesEmail = matches(person.getEmail(), email);
+
+            return matchesFullName && matchesEmail && matchesProfession;
+        }
+
+        private boolean matches(String value, String searchTerm) {
+            return searchTerm == null || searchTerm.isEmpty()
+                || value.toLowerCase().contains(searchTerm.toLowerCase());
+        }
+
     }
 }

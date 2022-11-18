@@ -91,7 +91,7 @@ public class AboutView extends VerticalLayout {
             IntStream.range(0, countToCreate).forEach(value -> {
                 SamplePerson samplePerson = new SamplePerson();
                 samplePerson.setFirstName("Sample " + value);
-                samplePerson.setFirstName("Clone " + value);
+                samplePerson.setLastName("Clone " + value);
                 samplePerson.setEmail("sample" + value + "@example.com");
                 samplePerson.setOccupation("Sampler");
                 samplePerson.setPhone("1231231234");
