@@ -43,7 +43,9 @@ Run:
 
 `./startObservabilityNewRelic.sh` 
 
-This should download the agent JAR and start the demo app. The terminal is intentionally left hanging. When you hit Ctrl + c it will kill the app... 
+This should download the agent JAR and start the demo app. The terminal is intentionally left hanging. When you hit Ctrl + c it will kill the app...
+
+New relic console: https://one.eu.newrelic.com/
 
 ## How to run Jaeger and Prometheus Demo
 ###(free, local only and probably best for dev/internal low security stuff)
