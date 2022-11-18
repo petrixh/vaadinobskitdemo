@@ -12,6 +12,8 @@ onExit(){
   cd "$GRAFANA_DIR"
   docker-compose down
   echo "Grafana containers brought down..."
+  cd ..
+  cd ..
 }
 
 ##Bring down containers if there is an error...

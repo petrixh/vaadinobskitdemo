@@ -58,26 +58,23 @@ This sill download the agent JAR, the Jaeger and Prometheus containers (docker),
 The terminal is intentionally left hanging, once you hit Ctrl + c it will kill the app and bring down the containers.   
 
 ## How to run Grafana Demo
+(if you get an error about docker-compose version see hint below): 
 
-TODO: update script to do the next steps
-
-Clone:
-
-`git clone https://github.com/vaadin/observability-grafana-setup.git` 
-
-
-Run: 
-
-`cd observability-grafana-setup`
-
-`docker-compose up`
-
-Go back to the `observability-kit`-folder with the .sh scripts... 
+This script will: 
+- Pull the Vaadin Grafana example docker setup from git
+- Downgrade the docker-compose.yml file to version 3.7
+- Pull and run the grafana docker-compose setup... 
+- Start the demo app
 
 Run:
 `./startObservabilityGrafana.sh`
 
 Ctrl + c kills the server... then remember to go back to the grafana folder and run `docker-compose down`
+
+If you get an error about docker-compose version mismatch, try to downgrade the compose file version. This is already
+done in the script to v3.7. Version 3.8 brought a bunch of "stack" features that I don't think are needed in the Grafana build...
+https://docs.docker.com/compose/compose-file/compose-versioning/#version-38
+
 
 # Demos included
 
