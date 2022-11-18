@@ -2,6 +2,10 @@
 
 A test/demo setup for running kit demos. For now ObservabilityKit being the only one included.
 
+It is recommended that you run this on a system with: 
+- 4 or "multiple" cores/threads (some leaky ops are heavy, but it will always use one less than available unless only one is available)
+- some ram... 4GB for instance if you show the leaky ram demo
+
 In order to run the demos, you'll need to have the appropriate Vaadin license installed. 
 On your dev system you probably already have everything installed. For a VM, you might want to 
 install one of the server (or offline, limited to 3, I think) licenses (production builds only): 
@@ -48,13 +52,15 @@ This should download the agent JAR and start the demo app. The terminal is inten
 New relic console: https://one.eu.newrelic.com/
 
 ## How to run Jaeger and Prometheus Demo
-###(free, local only and probably best for dev/internal low security stuff)
+(free, local only and probably best for dev/internal low security stuff)
+
 Run:
+
 `cd observability-kit`
 
 `./startObservabilityJaegerPrometheusDocker.sh`
 
-This sill download the agent JAR, the Jaeger and Prometheus containers (docker), start them up and start the demo app. 
+This will download the agent JAR, the Jaeger and Prometheus containers (docker), start them up and start the demo app. 
 The terminal is intentionally left hanging, once you hit Ctrl + c it will kill the app and bring down the containers.   
 
 ## How to run Grafana Demo
@@ -69,12 +75,14 @@ This script will:
 Run:
 `./startObservabilityGrafana.sh`
 
-Ctrl + c kills the server... then remember to go back to the grafana folder and run `docker-compose down`
+Ctrl + c kills the server and bring down the grafana containers... 
 
 If you get an error about docker-compose version mismatch, try to downgrade the compose file version. This is already
 done in the script to v3.7. Version 3.8 brought a bunch of "stack" features that I don't think are needed in the Grafana build...
 https://docs.docker.com/compose/compose-file/compose-versioning/#version-38
 
+## How to run NewRelic host monitor (for demoing NewRelic more) 
+TODO add a docker-compose for this... 
 
 # Demos included
 
