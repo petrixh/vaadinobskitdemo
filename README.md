@@ -61,7 +61,9 @@ Run:
 `./startObservabilityJaegerPrometheusDocker.sh`
 
 This will download the agent JAR, the Jaeger and Prometheus containers (docker), start them up and start the demo app. 
-The terminal is intentionally left hanging, once you hit Ctrl + c it will kill the app and bring down the containers.   
+The terminal is intentionally left hanging, once you hit Ctrl + c it will kill the app and bring down the containers.
+
+TODO: figure out how to get Jaeger to show Prometheus metrics for spans... 
 
 ## How to run Grafana Demo
 (if you get an error about docker-compose version see hint below): 
@@ -105,8 +107,8 @@ entry with an error.
 If you need to demonstrate metrics in more definite ways. On the About view there is a CPU cooker that starts
 totalThreads - 1 cpu trheads for 5 minutes to make the CPU graph spike.
 
-Additionally on the ImageList view there are buttons for leaking RAM. It will leak about 1GB per click, so you can also 
-demonstrate "out of heapspace" errors this way if you wish. It uses totalSystemThreads - 1 threads for this to make it
+Additionally, on the ImageList view there are buttons for leaking RAM. It will leak about 1GB per click, so you can also 
+demonstrate "out of heap space" errors this way if you wish. It uses totalSystemThreads - 1 threads for this to make it
 a bit faster (who thought generating random stuff actually takes much effort)... 
 
 ## Typical Vaadin slow view demo (longer demo, still WIP)
@@ -122,4 +124,4 @@ way that cases refreshes and population of filters etc. to cause multiple refres
 several times and repopulating, filtering etc. the table several times due to the listener, firing a listener, firing a 
 listener... pattern? :) 
 
-TODO: Add a cleaned up version that has the same funcationality but works much faster...
+TODO: Add a cleaned up version that has the same functionality but works much faster...
