@@ -49,7 +49,7 @@ echo "Done waiting for services... Starting app..."
 cd ../..
 
 echo "Starting demo app..."
-java -javaagent:./observability-kit/agent/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-jaeger-prometheus.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
+java -javaagent:./target/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-jaeger-prometheus.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
 
 ##Bring down the containers...
 echo "Exiting..."

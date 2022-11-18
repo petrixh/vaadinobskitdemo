@@ -28,8 +28,8 @@ cd observability-kit
 
 echo "App will be on port 8080, Grafana on port 3000"
 echo "Starting demo app... in 3 seconds"
-sleep 3s
-java -javaagent:./observability-kit/agent/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-grafana.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
+sleep 3s 
+java -javaagent:./target/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-grafana.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
 
 
 
