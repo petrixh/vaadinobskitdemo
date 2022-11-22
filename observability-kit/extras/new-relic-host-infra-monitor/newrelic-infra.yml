@@ -1,0 +1,4 @@
+#What can you tewak? Well, quite a bit... https://github.com/newrelic/infrastructure-agent/blob/master/assets/examples/infrastructure/newrelic-infra-template.yml.example
+
+license_key: <license_key_here>
+display_name: debian-dev-docker-host-monitor

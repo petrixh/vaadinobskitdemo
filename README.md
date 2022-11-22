@@ -40,9 +40,12 @@ Or on Linux just blindly run:
 and you should be able to run docker commands wihtout `sudo`. 
 
 ## How to run NewRelic Demo (easiest)
-Make sure you have created a new relic account and setup the API key into the `agent-new-relic.properties` file. 
+Make sure you have created a new relic account and setup the API key into the `agent-new-relic.properties` file. Should look something like: 
+
+```otel.exporter.otlp.headers=Api-Key=eu0xxxxx...```
 
 Run: 
+
 `cd observability-kit`
 
 `./startObservabilityNewRelic.sh` 
@@ -84,7 +87,21 @@ done in the script to v3.7. Version 3.8 brought a bunch of "stack" features that
 https://docs.docker.com/compose/compose-file/compose-versioning/#version-38
 
 ## How to run NewRelic host monitor (for demoing NewRelic more) 
-TODO add a docker-compose for this... 
+To run the NewRelic host infrastructure monitor you can find the scripts in `observability-kit/extras`.
+
+*NOTE: the container will run in privileged mode and will have read access to your hosts processes and file systems!*
+
+1. edit `new-relic-host-infra-monitor/newrelic-infra.yml`
+2. put your 40-char license key in the file
+3. (optionally) change the name of agent if you wish..
+
+The license key in this case should look something like: 
+
+```license_key: eu0xxxxx..``` (so no ApiKey= at the front like in the other NR file) 
+
+Run `./newRelicHostMonitorDocker.sh` which will ask you if you want to force rebuild the docker image even if it has been created. 
+If you changed the configs or if you want a new version of the NR agent, rebuilding will do this for you and start the container. 
+
 
 # Demos included
 
