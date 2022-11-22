@@ -58,7 +58,7 @@ cd ..
 echo "App will be on port 8080, Grafana on port 3000"
 echo "Starting demo app... in 5 seconds"
 sleep 5s
-java -javaagent:./target/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-grafana.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
+java -Xmx3G -javaagent:./target/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-grafana.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
 
 echo "Exiting..."
 onExit

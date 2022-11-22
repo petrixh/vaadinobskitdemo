@@ -5,6 +5,7 @@ A test/demo setup for running kit demos. For now ObservabilityKit being the only
 It is recommended that you run this on a system with: 
 - 4 or "multiple" cores/threads (some leaky ops are heavy, but it will always use one less than available unless only one is available)
 - some ram... 4GB for instance if you show the leaky ram demo
+- You might want to tweak the -Xmx3G parameter in the launch scripts if you're running less than 4GB of ram 
 
 In order to run the demos, you'll need to have the appropriate Vaadin license installed. 
 On your dev system you probably already have everything installed. For a VM, you might want to 
