@@ -2,3 +2,5 @@
 
 license_key: <license_key_here>
 display_name: debian-dev-docker-host-monitor
+#enable_process_metrics: false
+
