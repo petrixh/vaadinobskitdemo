@@ -2,6 +2,8 @@ version: "3.0"
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.39.0
+    container_name: jaeger
+    hostname: jaeger
     #image: jaegertracing/all-in-one:latest
     ports:
       - "6831:6831/udp"
@@ -18,6 +20,8 @@ services:
     #  - PROMETHEUS_SERVER_URL=http://host.docker.internal:9464
   prometheus:
     image: prom/prometheus:v2.40.2
+    container_name: prometheus
+    hostname: prometheus
     #image: prom/prometheus:latest
     #hostname: prometheus
     #user: "1000:1000"
