@@ -1,14 +1,12 @@
 #!/bin/sh
-
-#TODO move files and paths to variables for better maintenance...
-AGENT_JAR_PATH=./observability-kit/agent/
-# What version of the agent to use, and where to download it from if not already downloaded.
-# Ensure the version in the download URL also matches the version of the agent....
-AGENT_JAR=vaadin-opentelemetry-javaagent-1.0.0.jar
-AGENT_DOWNLOAD_PATH=https://repo1.maven.org/maven2/com/vaadin/observability/vaadin-opentelemetry-javaagent/1.0.0
-#Agent config file with path
+#Variables
+AGENT_JAR_PATH=./target
 AGENT_CONFIG_FILE=./observability-kit/agent-configs/agent-grafana.properties
 GRAFANA_DIR=observability-grafana-setup
+#APP_JAR - will be populated later...
+#AGENT_JAR - will be populated later...
+
+
 
 ##Exit hook for cleanup...
 onExit(){
@@ -26,16 +24,15 @@ trap 'onExit' EXIT
 ##Bring down containers on Ctrl + c
 trap 'onExit' 2
 
-cd ../target
-echo "Checking for agent JAR and downloading if necessary"
-if [ -f "$AGENT_JAR" ]; then
-  echo "Agent JAR already downloaded..."
-else
-  #wget http://tools.vaadin.com/nexus/content/repositories/vaadin-prereleases/com/vaadin/observability/vaadin-opentelemetry-javaagent/1.0.0.rc1/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar
-  wget "$AGENT_DOWNLOAD_PATH"/"$AGENT_JAR"
-fi
-cd ..
-cd observability-kit
+APP_JAR=$(ls ../target/kitstest*.jar)
+echo "App jar detected under target/$APP_JAR"
+
+echo 'Checking for agent jar, downloading if necessary...'
+./_downloadAgent.sh
+
+AGENT_JAR=$(ls ../target/vaadin-opentelemetry-javaagent*.jar)
+echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
+
 
 echo "Checking grafana docker project..."
 
@@ -74,12 +71,11 @@ docker-compose up -d
 cd ..
 cd ..
 
-#TODO clone the grafana exaample and run the docker-compose from there...
 
 echo "App will be on port 8080, Grafana on port 3000"
 echo "Starting demo app... in 5 seconds"
 sleep 5s
-java -Xmx3G -javaagent:./target/"$AGENT_JAR"      -Dotel.javaagent.configuration-file="$AGENT_CONFIG_FILE"  -jar ./target/kitstest-1.0-SNAPSHOT.jar
+java -Xmx3G -javaagent:"$AGENT_JAR_PATH"/"$AGENT_JAR" -Dotel.javaagent.configuration-file="$AGENT_CONFIG_FILE"  -jar ./target/"$APP_JAR"
 
 echo "Exiting..."
 onExit

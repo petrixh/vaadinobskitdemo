@@ -1,7 +1,8 @@
 #!/bin/sh
-#TODO move files and paths to variables for better maintenance...
-AGENT_JAR_PATH=./target/
-AGENT_JAR=vaadin-opentelemetry-javaagent-1.0.0.rc1.jar
+#Variables
+AGENT_JAR_PATH=./target
+#APP_JAR - will be populated later...
+#AGENT_JAR - will be populated later...
 
 ##Exit hook for cleanup...
 onExit(){
@@ -12,6 +13,16 @@ onExit(){
 trap 'onExit' EXIT
 ##Bring down containers on Ctrl + c
 trap 'onExit' 2
+
+APP_JAR=$(ls ../target/kitstest*.jar)
+echo "App jar detected under target/$APP_JAR"
+
+echo 'Checking for agent jar, downloading if necessary...'
+./_downloadAgent.sh
+
+AGENT_JAR=$(ls ../target/vaadin-opentelemetry-javaagent*.jar)
+echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
+
 
 cd ../target
 echo "Checking for agent JAR and downloading if necessary"
@@ -25,5 +36,5 @@ cd ..
 echo "App on port 8080, new relic on https://one.eu.newrelic.com/"
 echo "Starting demo app in 3 seconds..."
 sleep 3s
-java -Xmx3G -javaagent:./target/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-new-relic.properties  -jar ./target/kitstest-1.0-SNAPSHOT.jar
+java -Xmx3G -javaagent:"$AGENT_JAR_PATH"/"$AGENT_JAR"      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-new-relic.properties  -jar ./target/"$APP_JAR"
 

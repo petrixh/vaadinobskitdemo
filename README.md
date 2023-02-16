@@ -18,6 +18,16 @@ Step 0 after cloning the project, run:
 
 to make the JAR for the app itself. All other scripts expects the JAR to exist. 
 
+In order for the scripts to run, you might need to: 
+
+```chmod +x *.sh``` 
+
+in the `observability-kit` folder or from the project root: 
+
+```cd observability-kit && chmod +x *.sh && cd ..```
+
+in order to make them executable... 
+
 If you're planning on using NewRelic, copy your NewRelic API key to: 
 `observability-kit/agent-configs/agent-new-relic.properties`
 
@@ -38,7 +48,7 @@ Or on Linux just blindly run:
 
 `newgrp docker`
 
-and you should be able to run docker commands wihtout `sudo`. 
+and you should be able to run docker commands without `sudo`. 
 
 ## How to run NewRelic Demo (easiest)
 Make sure you have created a new relic account and setup the API key into the `agent-new-relic.properties` file. Should look something like: 
