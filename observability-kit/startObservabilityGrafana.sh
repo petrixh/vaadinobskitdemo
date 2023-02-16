@@ -45,6 +45,10 @@ else
   echo "Cloning Grafana Docker setup..."
   git clone https://github.com/vaadin/observability-grafana-setup.git
   cd "$GRAFANA_DIR"
+
+  # Remove .git folder so that git doesn't want to try to tell you that files have changed...
+  rm -rf .git
+
   # Fix docker version conflict on latest base debian installation
   # (official images don't yet use the latest docker binaries)
   replacement="version: \"3.7\""
