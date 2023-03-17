@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class OptMasterDetailView extends Div implements BeforeEnterObserver {
 
     private final String SAMPLEPERSON_ID = "samplePersonID";
-    private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
+    private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "opt-master-detail/%s/edit";
 
     private TextField firstName;
     private TextField lastName;

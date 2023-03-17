@@ -33,7 +33,7 @@ import java.util.UUID;
 public class MasterDetailView extends Div implements BeforeEnterObserver {
 
     private final String SAMPLEPERSON_ID = "samplePersonID";
-    private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
+    private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "master-detail-slow/%s/edit";
 
 //    private final Grid<SamplePerson> grid = new Grid<>(SamplePerson.class, false);
 //    //private final GridPro<SamplePerson> grid = new GridPro<SamplePerson>(SamplePerson.class);
