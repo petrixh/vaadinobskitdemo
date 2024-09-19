@@ -1,8 +1,5 @@
 package com.example.application.views;
 
-
-import com.example.application.components.appnav.AppNav;
-import com.example.application.components.appnav.AppNavItem;
 import com.example.application.views.about.AboutView;
 import com.example.application.views.dashboard.DashboardView;
 import com.example.application.views.helloworld.HelloWorldView;
@@ -15,6 +12,7 @@ import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
@@ -60,7 +58,7 @@ public class MainLayout extends AppLayout {
 
         //nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class, LineAwesomeIcon.COLUMNS_SOLID.create()));
         
-        nav.addItem(new SideNavItem("Dashboard", DashboardView.class));
+        nav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.ABACUS.create()));
         nav.addItem(new SideNavItem("Hello World", HelloWorldView.class));
         nav.addItem(new SideNavItem("About", AboutView.class));
         nav.addItem(new SideNavItem("Image List", ImageListView.class));
