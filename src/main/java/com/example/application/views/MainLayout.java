@@ -54,32 +54,16 @@ public class MainLayout extends AppLayout {
 
     private SideNav createNavigation() {
 
-         SideNav nav = new SideNav();
+        SideNav nav = new SideNav();
 
-        //nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class, LineAwesomeIcon.COLUMNS_SOLID.create()));
-        
-        nav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.ABACUS.create()));
-        nav.addItem(new SideNavItem("Hello World", HelloWorldView.class));
-        nav.addItem(new SideNavItem("About", AboutView.class));
-        nav.addItem(new SideNavItem("Image List", ImageListView.class));
-        nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class));
-        nav.addItem(new SideNavItem("Opt Master-Detail", OptMasterDetailView.class));
+        nav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.CHART.create()));
+        nav.addItem(new SideNavItem("Hello World", HelloWorldView.class, VaadinIcon.GLOBE.create()));
+        nav.addItem(new SideNavItem("About", AboutView.class, VaadinIcon.FILE.create()));
+        nav.addItem(new SideNavItem("Image List", ImageListView.class, VaadinIcon.PICTURE.create()));
+        nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class, VaadinIcon.TABLE.create()));
+        nav.addItem(new SideNavItem("Opt Master-Detail", OptMasterDetailView.class, VaadinIcon.TABLE.create()));
 
         return nav;
-
-
-        // AppNav is not yet an official component.
-        // For documentation, visit https://github.com/vaadin/vcf-nav#readme
-        //AppNav nav = new AppNav();
-
-        // nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
-        // nav.addItem(new AppNavItem("Hello World", HelloWorldView.class, "la la-globe"));
-        // nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
-        // nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
-        // nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
-        // nav.addItem(new AppNavItem("Opt Master-Detail", OptMasterDetailView.class, "la la-columns"));
-
-        //return nav;
     }
 
     private Footer createFooter() {
