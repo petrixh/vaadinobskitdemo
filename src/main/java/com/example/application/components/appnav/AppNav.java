@@ -3,8 +3,6 @@ package com.example.application.components.appnav;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.dom.Element;
 import java.util.Optional;
 
@@ -15,8 +13,6 @@ import java.util.Optional;
  * created by adding {@link AppNavItem} instances to other {@link AppNavItem}
  * instances.
  */
-@JsModule("@vaadin-component-factory/vcf-nav")
-@Tag("vcf-nav")
 public class AppNav extends Component implements HasSize, HasStyle {
 
     /**

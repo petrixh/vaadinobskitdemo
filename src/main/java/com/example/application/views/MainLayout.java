@@ -16,6 +16,8 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.sidenav.SideNav;
+import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
@@ -52,19 +54,34 @@ public class MainLayout extends AppLayout {
         addToDrawer(header, scroller, createFooter());
     }
 
-    private AppNav createNavigation() {
-        // AppNav is not yet an official component.
-        // For documentation, visit https://github.com/vaadin/vcf-nav#readme
-        AppNav nav = new AppNav();
+    private SideNav createNavigation() {
 
-        nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
-        nav.addItem(new AppNavItem("Hello World", HelloWorldView.class, "la la-globe"));
-        nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
-        nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
-        nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
-        nav.addItem(new AppNavItem("Opt Master-Detail", OptMasterDetailView.class, "la la-columns"));
+         SideNav nav = new SideNav();
+
+        //nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class, LineAwesomeIcon.COLUMNS_SOLID.create()));
+        
+        nav.addItem(new SideNavItem("Dashboard", DashboardView.class));
+        nav.addItem(new SideNavItem("Hello World", HelloWorldView.class));
+        nav.addItem(new SideNavItem("About", AboutView.class));
+        nav.addItem(new SideNavItem("Image List", ImageListView.class));
+        nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class));
+        nav.addItem(new SideNavItem("Opt Master-Detail", OptMasterDetailView.class));
 
         return nav;
+
+
+        // AppNav is not yet an official component.
+        // For documentation, visit https://github.com/vaadin/vcf-nav#readme
+        //AppNav nav = new AppNav();
+
+        // nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
+        // nav.addItem(new AppNavItem("Hello World", HelloWorldView.class, "la la-globe"));
+        // nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
+        // nav.addItem(new AppNavItem("Image List", ImageListView.class, "la la-file"));
+        // nav.addItem(new AppNavItem("Master-Detail", MasterDetailView.class, "la la-columns"));
+        // nav.addItem(new AppNavItem("Opt Master-Detail", OptMasterDetailView.class, "la la-columns"));
+
+        //return nav;
     }
 
     private Footer createFooter() {

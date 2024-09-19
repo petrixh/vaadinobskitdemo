@@ -1,8 +1,6 @@
 package com.example.application.components.appnav;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.dom.Element;
@@ -17,8 +15,6 @@ import java.util.Optional;
  * <p>
  * Can contain a label and/or an icon and links to a given {@code path}.
  */
-@JsModule("@vaadin-component-factory/vcf-nav")
-@Tag("vcf-nav-item")
 public class AppNavItem extends Component {
 
     /**
