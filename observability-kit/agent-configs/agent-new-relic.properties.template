@@ -1,0 +1,11 @@
+otel.traces.exporter=otlp
+otel.logs.exporter=otlp
+otel.metrics.exporter=otlp
+#This is for EU, if on another continent, update the server from jRebel docs...
+otel.exporter.otlp.endpoint=https://otlp.eu01.nr-data.net 
+otel.exporter.otlp.headers=Api-Key=<YOUR-NEW-RELIC-API-KEY>
+otel.exporter.otlp.protocol=http/protobuf
+otel.attribute.value.length.limit=4095
+
+#Enable JVM metrics by giving this instance a unique ID within a given namespace
+otel.resource.attributes=service.namespace=vaadinkits,service.instance.id=kittest-app
