@@ -1,11 +1,12 @@
 package com.example.application.views.imagelist;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.example.application.data.service.LeakyProtoService;
 import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.gridpro.GridPro;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.html.OrderedList;
@@ -15,13 +16,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.VaadinSession;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 
 @PageTitle("Image List")
 @Route(value = "image-list", layout = MainLayout.class)
