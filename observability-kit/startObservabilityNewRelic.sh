@@ -20,7 +20,7 @@ echo "App jar detected under target/$APP_JAR"
 echo 'Checking for agent jar, downloading if necessary...'
 ./_downloadAgent.sh
 
-AGENT_JAR=$(ls ../target/vaadin-opentelemetry-javaagent*.jar)
+AGENT_JAR=$(ls ../target/observability-kit-agent*.jar)
 echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
 
 

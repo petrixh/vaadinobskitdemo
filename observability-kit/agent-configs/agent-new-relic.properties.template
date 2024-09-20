@@ -1,3 +1,6 @@
+#
+#COPY AND RENAME THIS FILE TO agent-new-relic.propertis and add your api-key
+#
 otel.traces.exporter=otlp
 otel.logs.exporter=otlp
 otel.metrics.exporter=otlp
