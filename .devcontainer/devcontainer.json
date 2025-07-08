@@ -1,0 +1,15 @@
+{
+  "name": "Dev Container Test",
+  "image": "ghcr.io/petrixh/java-21-flow-dind-dev-container:latest", 
+  "updateRemoteUserUID": false,
+  //To mount the local m2 folder and reduce initial dependency resolution time
+  "mounts": [
+    "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+    "extensions": [],
+      "settings": {}
+    }
+  }
+}
