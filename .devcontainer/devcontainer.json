@@ -1,6 +1,6 @@
 {
   "name": "Dev Container Test",
-  "image": "ghcr.io/petrixh/java-21-flow-dind-dev-container:latest", 
+  "image": "ghcr.io/petrixh/java-17-flow-dind-dev-container:latest", 
   "updateRemoteUserUID": false,
   //To mount the local m2 folder and reduce initial dependency resolution time
   "mounts": [
@@ -8,8 +8,12 @@
   ],
   "customizations": {
     "vscode": {
-    "extensions": [],
+    "extensions": [
+                "vscjava.vscode-java-pack"
+            ],
       "settings": {}
     }
   }
 }
+
+// If the java installation bugs out: sudo apt update && sudo apt install openjdk-17-jdk-headless
