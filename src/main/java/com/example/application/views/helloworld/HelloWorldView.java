@@ -9,6 +9,10 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+
 @PageTitle("Hello World")
 @Route(value = "hello", layout = MainLayout.class)
 public class HelloWorldView extends HorizontalLayout {
@@ -20,7 +24,16 @@ public class HelloWorldView extends HorizontalLayout {
         name = new TextField("Your name");
         sayHello = new Button("Say hello");
         sayHello.addClickListener(e -> {
-            Notification.show("Hello " + name.getValue());
+
+            Tracer trace = GlobalOpenTelemetry.getTracer("app-instrumentation", "1.0.0"); 
+            final Span span = trace.spanBuilder("My Custom Span").startSpan();
+
+            try{
+                span.setAttribute("hello.value", name.getValue());
+                Notification.show("Hello " + name.getValue());
+            } finally {
+                span.end();
+            }
         });
         sayHello.addClickShortcut(Key.ENTER);
 

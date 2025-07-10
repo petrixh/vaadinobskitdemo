@@ -11,13 +11,20 @@
 
     <properties>
         <java.version>17</java.version>
-        <vaadin.version>24.5.0.beta2</vaadin.version>
+        <!-- <vaadin.version>24.5.0.beta2</vaadin.version> -->
+        <vaadin.version>24.6.12</vaadin.version>
+        <!-- How to figure this out? Go to https://github.com/vaadin/observability-kit -> Tag -> find the version that matches the vaadin-obskit jar you downloaded -> check the pom.xml property for "opentelemetry.javaagent.version" -->
+        <open.telemetry.annotation.version>1.23.0</open.telemetry.annotation.version>
+        <open.telemetry.api.version>1.23.0</open.telemetry.api.version>
+        <!-- For vaadin obskit 3.1.0 -->
+        <!--<open.telemetry.annotation.version>2.10.0</open.telemetry.annotation.version>
+        <open.telemetry.api.version>1.44.1</open.telemetry.api.version> -->
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.3</version>
+        <version>3.4.2</version>
     </parent>
 
     <repositories>
@@ -106,6 +113,21 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Custom spans/annotations https://vaadin.com/docs/latest/tools/observability/customization#customizing-traces -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>${open.telemetry.annotation.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${open.telemetry.api.version}</version>
+        </dependency>
+        
+        
     </dependencies>
 
     <build>
