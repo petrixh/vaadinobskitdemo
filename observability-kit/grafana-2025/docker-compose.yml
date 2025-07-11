@@ -56,10 +56,19 @@ services:
     ports:
       - "9090:9090"
 
+  loki:
+    #image: grafana/loki:latest
+    image: grafana/loki:main-7080e62
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
   grafana:
     image: grafana/grafana:11.0.0
     volumes:
       - ../shared/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana/vaadin-dashboard.json:/var/lib/grafana/dashboards/vaadin-dashboard.json
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
