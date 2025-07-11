@@ -26,3 +26,4 @@ observability-kit/observability-grafana-setup/
 observability-kit/agent-configs/agent-new-relic.properties
 observability-kit/_downloadAgent.sh
 src/main/bundles/
+observability-kit/grafana-2025/tempo-data/

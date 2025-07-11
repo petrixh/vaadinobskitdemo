@@ -20,7 +20,16 @@ public class HelloWorldView extends HorizontalLayout {
         name = new TextField("Your name");
         sayHello = new Button("Say hello");
         sayHello.addClickListener(e -> {
-            Notification.show("Hello " + name.getValue());
+
+            Tracer trace = GlobalOpenTelemetry.getTracer("app-instrumentation", "1.0.0"); 
+            final Span span = trace.spanBuilder("My Custom Span").startSpan();
+
+            try{
+                span.setAttribute("hello.value", name.getValue());
+                Notification.show("Hello " + name.getValue());
+            } finally {
+                span.end();
+            }
         });
         sayHello.addClickShortcut(Key.ENTER);
 
