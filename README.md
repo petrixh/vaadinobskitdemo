@@ -1,6 +1,6 @@
-# KitsTest
+# Observability Kit Demo
 
-A test/demo setup for running kit demos. For now ObservabilityKit being the only one included.
+A test/demo setup for Observability Kit.
 
 It is recommended that you run this on a system with: 
 - 4 or "multiple" cores/threads (some leaky ops are heavy, but it will always use one less than available unless only one is available)
@@ -9,7 +9,7 @@ It is recommended that you run this on a system with:
 
 In order to run the demos, you'll need to have the appropriate Vaadin license installed. 
 On your dev system you probably already have everything installed. For a VM, you might want to 
-install one of the server (or offline, limited to 3, I think) licenses (production builds only): 
+install one of the server (or offline but they are limited in nr) licenses (production builds only): 
 https://vaadin.com/myaccount/licenses 
 
 Step 0 after cloning the project, run:
