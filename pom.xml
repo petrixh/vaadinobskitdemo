@@ -112,6 +112,19 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Custom spans/annotations https://vaadin.com/docs/latest/tools/observability/customization#customizing-traces -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>${open.telemetry.annotation.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${open.telemetry.api.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
