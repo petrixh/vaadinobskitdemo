@@ -25,3 +25,4 @@ webpack.generated.js
 observability-kit/observability-grafana-setup/
 observability-kit/agent-configs/agent-new-relic.properties
 src/main/bundles/
+observability-kit/ignored/

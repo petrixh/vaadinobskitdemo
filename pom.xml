@@ -14,11 +14,11 @@
         <!-- <vaadin.version>24.5.0.beta2</vaadin.version> -->
         <vaadin.version>24.6.12</vaadin.version>
         <!-- How to figure this out? Go to https://github.com/vaadin/observability-kit -> Tag -> find the version that matches the vaadin-obskit jar you downloaded -> check the pom.xml property for "opentelemetry.javaagent.version" -->
-        <open.telemetry.annotation.version>1.23.0</open.telemetry.annotation.version>
-        <open.telemetry.api.version>1.23.0</open.telemetry.api.version>
+        <!--<open.telemetry.annotation.version>1.23.0</open.telemetry.annotation.version>
+        <open.telemetry.api.version>1.23.0</open.telemetry.api.version>  -->
         <!-- For vaadin obskit 3.1.0 -->
-        <!--<open.telemetry.annotation.version>2.10.0</open.telemetry.annotation.version>
-        <open.telemetry.api.version>1.44.1</open.telemetry.api.version> -->
+        <open.telemetry.annotation.version>2.10.0</open.telemetry.annotation.version>
+        <open.telemetry.api.version>1.44.1</open.telemetry.api.version>
     </properties>
 
     <parent>
