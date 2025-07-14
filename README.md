@@ -14,22 +14,23 @@ https://vaadin.com/myaccount/licenses
 
 Step 0 after cloning the project, run:
 
-`mvn clean package -P production`
+```
+mvn clean package -P production
+```
 
 to make the JAR for the app itself. All other scripts expects the JAR to exist. 
 
-In order for the scripts to run, you might need to: 
+In the `observability-kit` folder or from the project root: 
 
-```chmod +x *.sh``` 
+```
+cd observability-kit && chmod +x *.sh && cd ..
+```
 
-in the `observability-kit` folder or from the project root: 
+in order to enxure they are executable... 
 
-```cd observability-kit && chmod +x *.sh && cd ..```
-
-in order to make them executable... 
-
-If you're planning on using NewRelic, copy your NewRelic API key to: 
+If you're planning on using NewRelic, there is a template file you can copy and rename and then copy your NewRelic API key to: 
 `observability-kit/agent-configs/agent-new-relic.properties`
+ 
 
 UI ports on host system (depending on what you run): 
 - 8080  -> DemoApp
@@ -51,7 +52,7 @@ Or on Linux just blindly run:
 and you should be able to run docker commands without `sudo`. 
 
 ## How to run NewRelic Demo (easiest)
-Make sure you have created a new relic account and setup the API key into the `agent-new-relic.properties` file. Should look something like: 
+Make sure you have created a new relic account and setup the API key, copied the template file in the `agent-cofnig` folder and added your API key into the `agent-new-relic.properties` file. Should look something like: 
 
 ```otel.exporter.otlp.headers=Api-Key=eu0xxxxx...```
 
@@ -65,7 +66,7 @@ This should download the agent JAR and start the demo app. The terminal is inten
 
 New relic console: https://one.eu.newrelic.com/
 
-## How to run Jaeger and Prometheus Demo
+## How to run Jaeger and Prometheus Demo (probably outdated)
 (free, local only and probably best for dev/internal low security stuff)
 
 Run:
@@ -83,13 +84,14 @@ TODO: figure out how to get Jaeger to show Prometheus metrics for spans...
 (if you get an error about docker-compose version see hint below): 
 
 This script will: 
-- Pull the Vaadin Grafana example docker setup from git
-- Downgrade the docker-compose.yml file to version 3.7
+- Pull the Vaadin Grafana example docker setup from git 
 - Pull and run the grafana docker-compose setup... 
-- Start the demo app
+- Start the demo app using the agent config for grafana from agent-configs
 
 Run:
-`./startObservabilityGrafana.sh`
+```
+./startObservabilityGrafana.sh
+```
 
 Ctrl + c kills the server and bring down the grafana containers... 
 
