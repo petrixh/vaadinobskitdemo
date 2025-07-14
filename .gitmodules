@@ -1,0 +1,3 @@
+[submodule "observability-kit/observability-grafana-setup"]
+	path = observability-kit/observability-grafana-setup
+	url = https://github.com/petrixh/observability-grafana-setup.git

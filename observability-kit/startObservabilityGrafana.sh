@@ -33,21 +33,8 @@ echo 'Checking for agent jar, downloading if necessary...'
 AGENT_JAR=$(ls ../target/observability-kit-agent*.jar)
 echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
 
-
-echo "Checking grafana docker project..."
-
-if [ -d "$GRAFANA_DIR" ]; then
-  echo "Grafana setup already cloned..."
-else
-  echo "Cloning Grafana Docker setup..."
-  git clone https://github.com/petrixh/observability-grafana-setup.git
-  cd "$GRAFANA_DIR"
-
-  # Remove .git folder so that git doesn't want to try to tell you that files have changed...
-  rm -rf .git
-
-  cd ..
-fi
+echo "Updating grafana docker submodule project" 
+git submodule update --init --recursive
 
 echo "Pulling grafana images..."
 cd "$GRAFANA_DIR"
