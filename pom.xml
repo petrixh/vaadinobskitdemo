@@ -244,6 +244,9 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <jvmArguments>-Xmx3G -javaagent:"/workspaces/vaadinobskitdemo-1/target/observability-kit-agent-3.1.0.jar" -Dotel.javaagent.configuration-file="/workspaces/vaadinobskitdemo-1/observability-kit/agent-configs/agent-grafana.properties"</jvmArguments>
+                        </configuration>
                     </plugin>
 
                     <!-- Runs the integration tests (*IT) after the server is started -->

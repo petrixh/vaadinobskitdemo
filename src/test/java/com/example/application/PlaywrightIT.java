@@ -20,7 +20,7 @@ import java.io.IOException;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT) 
 @Tag("playwright") 
-public class PlaywrightTest {
+public class PlaywrightIT {
 
     // This will be injected with the random free port
     // number that was allocated
