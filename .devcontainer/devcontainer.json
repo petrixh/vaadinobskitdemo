@@ -3,6 +3,7 @@
 {
 	"name": "Java 21 Docker-in-Docker Dev Container",
 	"image": "mcr.microsoft.com/devcontainers/java:21",
+	"forwardPorts": [8080, 3000],
 
 	"features": {
 		
@@ -20,5 +21,10 @@
                 ],
         "settings": {}
         }
-     }
+     }, 
+
+	"mounts": [
+		"source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.vaadin,target=/dot-vaadin,type=bind,consistency=cached,readonly"
+	] 
 }
