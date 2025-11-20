@@ -94,6 +94,13 @@ public class PlaywrightTest {
 
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login button")).click();
 
+        try{
+            Thread.sleep(500); 
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+		}  
+
         
         page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGVy/vaadin-dashboard-3-1-0?orgId=1&refresh=5s");
 
