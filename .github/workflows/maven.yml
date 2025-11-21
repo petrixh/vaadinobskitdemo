@@ -44,3 +44,11 @@ jobs:
 
     - name: Run integration tests
       run: ./mvnw -B verify -Pproduction,it -Dvaadin.commercialWithBanner --file pom.xml
+
+    - name: Stop Playwright
+      if: always()
+      run: cd playwright && docker compose down
+
+    - name: Stop Grafana
+      if: always() 
+      run: cd observability-kit/observability-grafana-setup && docker compose down
