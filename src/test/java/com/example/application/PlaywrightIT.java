@@ -113,14 +113,7 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGVy/vaadin-dashboard-3-1-0?orgId=1&refresh=5s");
 
 
-        int telemetryWait = 5000;
-        System.out.println("Giving telemetry "+ (telemetryWait/1000) +" seconds to make it to prometheus/grafana....");
-        try{
-            Thread.sleep(telemetryWait); 
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-		}  
+
 
         System.out.println("...done watiting.");
 
@@ -133,7 +126,21 @@ public class PlaywrightIT {
 
         
         //Grafana is a pain to test, so check the metrics through prometheus and make sure grafana also gets them... 
-        boolean hasRecentCpuMetrics = hasRecentCpuMetrics();
+        boolean hasRecentCpuMetrics = false; 
+        
+        long start = System.currentTimeMillis(); 
+        
+        while ( (hasRecentCpuMetrics = hasRecentCpuMetrics()) == false && (System.currentTimeMillis() - start < 60 * 1000)) {
+            
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
+        }
+        
         boolean hasRecentJvmMemoryMetrics = hasRecentJvmMemoryMetrics();
 
         assertTrue("Prometheus did not get CPU telemetry", hasRecentCpuMetrics); 
