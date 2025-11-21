@@ -12,6 +12,9 @@ if [ -f "$AGENT_JAR" ]; then
 else
   wget "$AGENT_DOWNLOAD_PATH"/"$AGENT_JAR"
 fi
+echo "Observability kit agent downloaded: "
+pwd 
+ls 
 cd ..
 cd observability-kit
 
