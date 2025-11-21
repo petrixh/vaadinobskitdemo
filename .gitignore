@@ -26,3 +26,4 @@ webpack.generated.js
 observability-kit/agent-configs/agent-new-relic.properties
 src/main/bundles/
 observability-kit/ignored/
+bin/
