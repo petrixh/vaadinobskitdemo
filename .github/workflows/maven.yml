@@ -27,11 +27,18 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
-      run: ./mvnw -B clean package -Pproduction -Dvaadin.commercialWithBanner --file pom.xml -DskipTests
 
     - name: Pull Grafana stack...
       run: git submodule update --init --recursive
+
+    - name: Start preloading Grafana in backgorund...
+      run: cd observability-kit/observability-grafana-setup && docker compose pull & 
+
+    - name: Start preloading Playwright in backgorund...
+      run: cd playwright && docker compose pull & 
+
+    - name: Build with Maven
+      run: ./mvnw -B clean package -Pproduction -Dvaadin.commercialWithBanner --file pom.xml -DskipTests
 
     - name: Start Grafana
       run: cd observability-kit/observability-grafana-setup && docker compose up -d 
