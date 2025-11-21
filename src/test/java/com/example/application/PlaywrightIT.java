@@ -185,7 +185,7 @@ public class PlaywrightIT {
         page.screenshot();
         byte[] screenshot = page.screenshot();
         try {
-			java.nio.file.Files.write(java.nio.file.Paths.get("/workspaces/vaadinobskitdemo-1/target/" + name), screenshot);
+			java.nio.file.Files.write(java.nio.file.Paths.get("target/" + name), screenshot);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
