@@ -1,6 +1,6 @@
 services:
   playwright-server:
-    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    image: mcr.microsoft.com/playwright:v1.56.0-noble
     container_name: playwright-server
     cpus: 2
     init: true
