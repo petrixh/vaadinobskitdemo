@@ -113,12 +113,16 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGVy/vaadin-dashboard-3-1-0?orgId=1&refresh=5s");
 
 
+        int telemetryWait = 5000;
+        System.out.println("Giving telemetry "+ (telemetryWait/1000) +" seconds to make it to prometheus/grafana....");
         try{
-            Thread.sleep(250); 
+            Thread.sleep(telemetryWait); 
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
 		}  
+
+        System.out.println("...done watiting.");
 
         takeScreenshot("Screenshot-"+imageCounter++ +".png", page); 
         page.getByText("Traces").isVisible(); 
@@ -126,10 +130,14 @@ public class PlaywrightIT {
         // Verify the Grafana UI works by checking that the Traces panel has data (no "No data" message)
         assertThat(page.getByText("Traces")).isVisible();
         assertThat(page.locator("[data-testid='data-testid Panel header Traces']").locator("..").getByText("No data")).not().isVisible();
+
         
         //Grafana is a pain to test, so check the metrics through prometheus and make sure grafana also gets them... 
-        assertTrue("Prometheus did not get CPU telemetry", hasRecentCpuMetrics()); 
-        assertTrue("Prometheus did not get JVM Memory telemetry", hasRecentJvmMemoryMetrics()); 
+        boolean hasRecentCpuMetrics = hasRecentCpuMetrics();
+        boolean hasRecentJvmMemoryMetrics = hasRecentJvmMemoryMetrics();
+
+        assertTrue("Prometheus did not get CPU telemetry", hasRecentCpuMetrics); 
+        assertTrue("Prometheus did not get JVM Memory telemetry", hasRecentJvmMemoryMetrics); 
 
         // This seems to take a while even though the data is there in prometheus... 
         //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana()); 
