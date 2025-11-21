@@ -28,14 +28,8 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Pull Grafana stack...
-      run: git submodule update --init --recursive
-
-    - name: Start preloading Grafana in backgorund...
-      run: cd observability-kit/observability-grafana-setup && docker compose pull & 
-
-    - name: Start preloading Playwright in backgorund...
-      run: cd playwright && docker compose pull & 
+    - name: Start preloading Grafana, Obskit JAR and Playwright in backgorund...
+      run: ( git submodule update --init --recursive && cd observability-kit/observability-grafana-setup && docker compose pull && cd .. && ./_downloadAgent.sh && cd .. && cd playwright && docker compose pull) &
 
     - name: Build with Maven
       run: ./mvnw -B clean package -Pproduction -Dvaadin.commercialWithBanner --file pom.xml -DskipTests
