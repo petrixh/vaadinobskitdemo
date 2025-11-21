@@ -21,3 +21,8 @@ updates:
           - "*"
         update-types:
           - "major"
+
+  - package-ecosystem: "docker"
+    directory: "/playwright" # Location of docker-compose.yml
+    schedule:
+      interval: "weekly"

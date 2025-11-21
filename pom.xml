@@ -126,7 +126,33 @@
             <artifactId>opentelemetry-api</artifactId>
             <version>${open.telemetry.api.version}</version>
         </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+          <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.21.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.21.3</version>
+            <scope>test</scope>
+        </dependency>
         
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.55.0</version> <!-- Check the latest version via https://playwright.dev -->
+            <scope>test</scope>
+        </dependency>
         
     </dependencies>
 
@@ -218,6 +244,9 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <jvmArguments>-Xmx3G -javaagent:"target/observability-kit-agent-3.1.0.jar" -Dotel.javaagent.configuration-file="observability-kit/agent-configs/agent-grafana.properties"</jvmArguments>
+                        </configuration>
                     </plugin>
 
                     <!-- Runs the integration tests (*IT) after the server is started -->

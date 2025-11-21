@@ -1,0 +1,15 @@
+services:
+  playwright-server:
+    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    container_name: playwright-server
+    cpus: 2
+    init: true
+    tty: true
+    user: pwuser
+    working_dir: /home/pwuser
+    ports:
+      - "3001:3000"
+    extra_hosts:
+      - "hostmachine:host-gateway"
+    command: >
+      /bin/sh -c "npx -y playwright@1.55.0 run-server --port 3000 --host 0.0.0.0"

@@ -3,6 +3,11 @@
 {
 	"name": "Java 21 Docker-in-Docker Dev Container",
 	"image": "mcr.microsoft.com/devcontainers/java:21",
+	"forwardPorts": [8080, 3000],
+
+//	"runArgs": [
+//        "--env-file=../.env"
+//    ],
 
 	"features": {
 		
@@ -13,12 +18,27 @@
 		} 
 	}, 
 
+	"containerEnv": {
+        "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS": "true", 
+		//"VAADIN_LICENSE": "${localEnv:VAADIN_LICENSE}"
+    },
+
     "customizations": {
         "vscode": {
             "extensions": [
                     "vscjava.vscode-java-pack"
                 ],
-        "settings": {}
+        "settings": {
+				"java.configuration.updateBuildConfiguration": "automatic",
+				"java.compile.nullAnalysis.mode": "automatic"
+			}
         }
-     }
+     }, 
+
+	"mounts": [
+		"source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.vaadin,target=/dot-vaadin,type=bind,consistency=cached,readonly"
+	], 
+	
+	
 }
