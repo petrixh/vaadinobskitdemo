@@ -32,7 +32,7 @@ jobs:
       run: ( git submodule update --init --recursive && cd observability-kit/observability-grafana-setup && docker compose pull && cd .. && ./_downloadAgent.sh && cd .. && cd playwright && docker compose pull) &
 
     - name: Build with Maven
-      run: ./mvnw -B clean package -Pproduction -Dvaadin.commercialWithBanner --file pom.xml -DskipTests
+      run: ./mvnw -B clean package -Pproduction -Dvaadin.commercialWithBanner --file pom.xml -DskipTests -D"aether.dependencyCollector.impl=bf"
 
     - name: Start Grafana
       run: cd observability-kit/observability-grafana-setup && docker compose up -d 

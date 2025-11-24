@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -143,8 +143,8 @@ public class PlaywrightIT {
         
         boolean hasRecentJvmMemoryMetrics = hasRecentJvmMemoryMetrics();
 
-        assertTrue("Prometheus did not get CPU telemetry", hasRecentCpuMetrics); 
-        assertTrue("Prometheus did not get JVM Memory telemetry", hasRecentJvmMemoryMetrics); 
+        assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry"); 
+        assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry"); 
 
         // This seems to take a while even though the data is there in prometheus... 
         //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana()); 
