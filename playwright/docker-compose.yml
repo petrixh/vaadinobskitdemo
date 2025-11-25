@@ -1,6 +1,7 @@
 services:
   playwright-server:
-    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    ## Change also the start script below!!!
+    image: mcr.microsoft.com/playwright:v1.56.1-noble 
     container_name: playwright-server
     cpus: 2
     init: true
@@ -12,4 +13,4 @@ services:
     extra_hosts:
       - "hostmachine:host-gateway"
     command: >
-      /bin/sh -c "npx -y playwright@1.55.0 run-server --port 3000 --host 0.0.0.0"
+      /bin/sh -c "npx -y playwright@1.56 run-server --port 3000 --host 0.0.0.0"
