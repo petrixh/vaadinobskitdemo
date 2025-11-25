@@ -17,7 +17,7 @@
         <!--<open.telemetry.annotation.version>1.23.0</open.telemetry.annotation.version>
         <open.telemetry.api.version>1.23.0</open.telemetry.api.version>  -->
         <!-- For vaadin obskit 3.1.0 -->
-        <open.telemetry.annotation.version>2.21.0</open.telemetry.annotation.version>
+        <open.telemetry.annotation.version>2.22.0</open.telemetry.annotation.version>
         <open.telemetry.api.version>1.56.0</open.telemetry.api.version>
     </properties>
 
