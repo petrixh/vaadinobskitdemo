@@ -150,7 +150,7 @@
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.55.0</version> <!-- Check the latest version via https://playwright.dev -->
+            <version>1.56.0</version> <!-- Check the latest version via https://playwright.dev and also update playwright/docker-compose.yml -->
             <scope>test</scope>
         </dependency>
         
