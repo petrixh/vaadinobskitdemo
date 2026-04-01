@@ -1,7 +1,7 @@
 package com.example.application.data.entity;
 
 import java.time.LocalDate;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import jakarta.persistence.Entity;
 import jakarta.validation.constraints.Email;

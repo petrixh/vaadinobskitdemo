@@ -4,12 +4,12 @@ package com.example.application.views.dashboard;
 import com.example.application.views.MainLayout;
 import com.example.application.views.dashboard.ServiceHealth.Status;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.*;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.html.Span;
@@ -32,12 +32,23 @@ public class DashboardView extends Main {
     public DashboardView() {
         addClassName("dashboard-view");
 
-        Board board = new Board();
-        board.addRow(createHighlight("Current users", "745", 33.7), createHighlight("View events", "54.6k", -112.45),
-                createHighlight("Conversion rate", "18%", 3.9), createHighlight("Custom metric", "-123.45", 0.0));
-        board.addRow(createViewEvents());
-        board.addRow(createServiceHealth(), createResponseTimes());
-        add(board);
+        // Row 1: Highlight cards
+        Div highlightsRow = new Div(
+                createHighlight("Current users", "745", 33.7),
+                createHighlight("View events", "54.6k", -112.45),
+                createHighlight("Conversion rate", "18%", 3.9),
+                createHighlight("Custom metric", "-123.45", 0.0));
+        highlightsRow.addClassName("dashboard-row");
+
+        // Row 2: View events chart
+        Div chartRow = new Div(createViewEvents());
+        chartRow.addClassName("dashboard-row");
+
+        // Row 3: Service health + Response times
+        Div bottomRow = new Div(createServiceHealth(), createResponseTimes());
+        bottomRow.addClassName("dashboard-row");
+
+        add(highlightsRow, chartRow, bottomRow);
     }
 
     private Component createHighlight(String title, String value, Double percentage) {
