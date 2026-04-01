@@ -143,10 +143,24 @@ public class PlaywrightIT {
         
         boolean hasRecentJvmMemoryMetrics = hasRecentJvmMemoryMetrics();
 
-        assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry"); 
-        assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry"); 
+        assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry");
+        assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry");
 
-        // This seems to take a while even though the data is there in prometheus... 
+        // Verify Vaadin-specific instrumentation is active (not just generic OTel traces).
+        // This catches VOKS agent muzzle failures where standard JPA/Spring traces work
+        // but Vaadin UI instrumentation silently fails to apply.
+        boolean hasVaadinTraces = false;
+        long vaadinStart = System.currentTimeMillis();
+        while (!hasVaadinTraces && (System.currentTimeMillis() - vaadinStart < 60 * 1000)) {
+            hasVaadinTraces = hasVaadinInstrumentedTraces();
+            if (!hasVaadinTraces) {
+                try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
+            }
+        }
+        assertTrue(hasVaadinTraces, () -> "Tempo has no traces with vaadin.request.type attribute - " +
+                "VOKS Vaadin instrumentation is not applied. Check agent version compatibility with Vaadin version.");
+
+        // This seems to take a while even though the data is there in prometheus...
         //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana()); 
 
     }
@@ -267,6 +281,43 @@ public class PlaywrightIT {
                    !response.body().contains("\"values\":[]");
         } catch (Exception e) {
             System.out.println("JVM Memory Error: ");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.request.type
+     * span attribute. This attribute is ONLY set by the VOKS Vaadin instrumentation
+     * module, so its presence proves the agent extension is actively instrumenting.
+     */
+    public boolean hasVaadinInstrumentedTraces() {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            long nowSeconds = Instant.now().getEpochSecond();
+            long fiveMinutesAgo = nowSeconds - 300;
+
+            // TraceQL query: find traces with vaadin.request.type attribute set
+            String query = URLEncoder.encode("{span.vaadin.request.type!=\"\"}", StandardCharsets.UTF_8);
+            String url = String.format(
+                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
+                    query, fiveMinutesAgo, nowSeconds);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Basic " + java.util.Base64.getEncoder()
+                            .encodeToString("admin:admin".getBytes()))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Vaadin Traces - Status code: " + response.statusCode());
+            System.out.println("Vaadin Traces - Response: " + response.body());
+
+            return response.statusCode() == 200
+                    && response.body().contains("\"traceID\"");
+        } catch (Exception e) {
+            System.out.println("Vaadin Traces Error: ");
             e.printStackTrace();
             return false;
         }
