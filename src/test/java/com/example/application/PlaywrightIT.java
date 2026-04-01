@@ -143,12 +143,45 @@ public class PlaywrightIT {
         
         boolean hasRecentJvmMemoryMetrics = hasRecentJvmMemoryMetrics();
 
-        assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry"); 
-        assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry"); 
+        assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry");
+        assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry");
 
-        // This seems to take a while even though the data is there in prometheus... 
-        //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana()); 
+        // This seems to take a while even though the data is there in prometheus...
+        //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana());
 
+    }
+
+    /**
+     * Verifies that the VOKS agent Vaadin instrumentation is actually applied
+     * by navigating views and checking Tempo for Navigate: spans with
+     * vaadin.navigation.route attribute. This catches silent muzzle failures
+     * where standard OTel traces (JPA, Spring) work but Vaadin UI instrumentation
+     * is not applied due to version incompatibility.
+     */
+    @Test
+    public void testVaadinInstrumentationActive() {
+        // Navigate a few views to generate Vaadin Navigate: spans
+        page.navigate("http://hostmachine:" + port + "/");
+        assertThat(page.getByText("Service health")).isVisible();
+
+        page.navigate("http://hostmachine:" + port + "/hello");
+        assertThat(page.getByText("Custom span/attribute example")).isVisible();
+
+        page.navigate("http://hostmachine:" + port + "/about");
+        page.navigate("http://hostmachine:" + port + "/master-detail-slow");
+
+        // Wait for traces to be flushed to Tempo (retry up to 60s)
+        boolean hasVaadinNavigationTraces = false;
+        long start = System.currentTimeMillis();
+        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
+            hasVaadinNavigationTraces = hasVaadinInstrumentedTraces();
+            if (!hasVaadinNavigationTraces) {
+                try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
+            }
+        }
+        assertTrue(hasVaadinNavigationTraces,
+                () -> "Tempo has no traces with vaadin.navigation.route attribute after navigating views. " +
+                        "VOKS Vaadin instrumentation is not applied - check agent version compatibility with Vaadin version.");
     }
 
     private int smokeTest(int counter) {
@@ -267,6 +300,46 @@ public class PlaywrightIT {
                    !response.body().contains("\"values\":[]");
         } catch (Exception e) {
             System.out.println("JVM Memory Error: ");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.navigation.route
+     * span attribute. This attribute is ONLY set on Navigate: spans created by VOKS
+     * Vaadin UI instrumentation during actual view navigations (from the smoke test).
+     * Unlike vaadin.request.type which can appear on startup traces, navigation spans
+     * prove the bytecode instrumentation is actively applied to Vaadin request handlers.
+     */
+    public boolean hasVaadinInstrumentedTraces() {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            long nowSeconds = Instant.now().getEpochSecond();
+            long fiveMinutesAgo = nowSeconds - 300;
+
+            // TraceQL query: find traces with vaadin.navigation.route attribute set
+            // This only exists on Navigate: spans from actual UI navigation
+            String query = URLEncoder.encode("{span.vaadin.navigation.route!=\"\"}", StandardCharsets.UTF_8);
+            String url = String.format(
+                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
+                    query, fiveMinutesAgo, nowSeconds);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Basic " + java.util.Base64.getEncoder()
+                            .encodeToString("admin:admin".getBytes()))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Vaadin Traces - Status code: " + response.statusCode());
+            System.out.println("Vaadin Traces - Response: " + response.body());
+
+            return response.statusCode() == 200
+                    && response.body().contains("\"traceID\"");
+        } catch (Exception e) {
+            System.out.println("Vaadin Traces Error: ");
             e.printStackTrace();
             return false;
         }

@@ -12,13 +12,14 @@
     <properties>
         <java.version>21</java.version>
         <!-- <vaadin.version>24.5.0.beta2</vaadin.version> -->
-        <vaadin.version>25.1.1</vaadin.version>
-        <!-- How to figure this out? Go to https://github.com/vaadin/observability-kit -> Tag -> find the version that matches the vaadin-obskit jar you downloaded -> check the pom.xml property for "opentelemetry.javaagent.version" -->
-        <!--<open.telemetry.annotation.version>1.23.0</open.telemetry.annotation.version>
-        <open.telemetry.api.version>1.23.0</open.telemetry.api.version>  -->
-        <!-- For vaadin obskit 3.1.0 -->
-        <open.telemetry.annotation.version>2.21.0</open.telemetry.annotation.version>
-        <open.telemetry.api.version>1.56.0</open.telemetry.api.version>
+        <!-- VOKS 4.0.0 muzzle check fails against 25.1.x - pinned to 25.0.x until a compatible VOKS is released -->
+        <vaadin.version>25.0.8</vaadin.version>
+        <!-- How to figure this out? Check https://repo1.maven.org/maven2/com/vaadin/observability-kit/{VERSION}/observability-kit-{VERSION}.pom
+             for opentelemetry.javaagent.version and opentelemetry.version properties.
+             App classpath versions MUST be <= the agent's bundled versions, or Vaadin instrumentation silently fails. -->
+        <!-- For vaadin obskit 4.0.0: opentelemetry.javaagent.version=2.20.1, opentelemetry.version=1.54.1 -->
+        <open.telemetry.annotation.version>2.20.1</open.telemetry.annotation.version>
+        <open.telemetry.api.version>1.54.1</open.telemetry.api.version>
     </properties>
 
     <parent>
@@ -213,9 +214,7 @@
                                 <phase>compile</phase>
                             </execution>
                         </executions>
-                        <configuration>
-                            <productionMode>true</productionMode>
-                        </configuration>
+                        <!-- productionMode is auto-enabled by build-frontend goal since Vaadin 25 -->
                     </plugin>
                 </plugins>
             </build>
@@ -245,7 +244,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <jvmArguments>-Xmx3G -javaagent:"target/observability-kit-agent-3.1.0.jar" -Dotel.javaagent.configuration-file="observability-kit/agent-configs/agent-grafana.properties"</jvmArguments>
+                            <jvmArguments>-Xmx3G -javaagent:"target/observability-kit-agent-4.0.0.jar" -Dotel.javaagent.configuration-file="observability-kit/agent-configs/agent-grafana.properties"</jvmArguments>
                         </configuration>
                     </plugin>
 
