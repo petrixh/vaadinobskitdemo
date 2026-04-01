@@ -146,23 +146,42 @@ public class PlaywrightIT {
         assertTrue(hasRecentCpuMetrics, () -> "Prometheus did not get CPU telemetry");
         assertTrue(hasRecentJvmMemoryMetrics, () -> "Prometheus did not get JVM Memory telemetry");
 
-        // Verify Vaadin-specific instrumentation is active (not just generic OTel traces).
-        // This catches VOKS agent muzzle failures where standard JPA/Spring traces work
-        // but Vaadin UI instrumentation silently fails to apply.
-        boolean hasVaadinTraces = false;
-        long vaadinStart = System.currentTimeMillis();
-        while (!hasVaadinTraces && (System.currentTimeMillis() - vaadinStart < 60 * 1000)) {
-            hasVaadinTraces = hasVaadinInstrumentedTraces();
-            if (!hasVaadinTraces) {
+        // This seems to take a while even though the data is there in prometheus...
+        //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana());
+
+    }
+
+    /**
+     * Verifies that the VOKS agent Vaadin instrumentation is actually applied
+     * by navigating views and checking Tempo for Navigate: spans with
+     * vaadin.navigation.route attribute. This catches silent muzzle failures
+     * where standard OTel traces (JPA, Spring) work but Vaadin UI instrumentation
+     * is not applied due to version incompatibility.
+     */
+    @Test
+    public void testVaadinInstrumentationActive() {
+        // Navigate a few views to generate Vaadin Navigate: spans
+        page.navigate("http://hostmachine:" + port + "/");
+        assertThat(page.getByText("Service health")).isVisible();
+
+        page.navigate("http://hostmachine:" + port + "/hello");
+        assertThat(page.getByText("Custom span/attribute example")).isVisible();
+
+        page.navigate("http://hostmachine:" + port + "/about");
+        page.navigate("http://hostmachine:" + port + "/master-detail-slow");
+
+        // Wait for traces to be flushed to Tempo (retry up to 60s)
+        boolean hasVaadinNavigationTraces = false;
+        long start = System.currentTimeMillis();
+        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
+            hasVaadinNavigationTraces = hasVaadinInstrumentedTraces();
+            if (!hasVaadinNavigationTraces) {
                 try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        assertTrue(hasVaadinTraces, () -> "Tempo has no traces with vaadin.request.type attribute - " +
-                "VOKS Vaadin instrumentation is not applied. Check agent version compatibility with Vaadin version.");
-
-        // This seems to take a while even though the data is there in prometheus...
-        //assertTrue("Grafana did not get CPU telemetry", hasRecentMetricsViaGrafana()); 
-
+        assertTrue(hasVaadinNavigationTraces,
+                () -> "Tempo has no traces with vaadin.navigation.route attribute after navigating views. " +
+                        "VOKS Vaadin instrumentation is not applied - check agent version compatibility with Vaadin version.");
     }
 
     private int smokeTest(int counter) {
@@ -287,9 +306,11 @@ public class PlaywrightIT {
     }
 
     /**
-     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.request.type
-     * span attribute. This attribute is ONLY set by the VOKS Vaadin instrumentation
-     * module, so its presence proves the agent extension is actively instrumenting.
+     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.navigation.route
+     * span attribute. This attribute is ONLY set on Navigate: spans created by VOKS
+     * Vaadin UI instrumentation during actual view navigations (from the smoke test).
+     * Unlike vaadin.request.type which can appear on startup traces, navigation spans
+     * prove the bytecode instrumentation is actively applied to Vaadin request handlers.
      */
     public boolean hasVaadinInstrumentedTraces() {
         try {
@@ -297,8 +318,9 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long fiveMinutesAgo = nowSeconds - 300;
 
-            // TraceQL query: find traces with vaadin.request.type attribute set
-            String query = URLEncoder.encode("{span.vaadin.request.type!=\"\"}", StandardCharsets.UTF_8);
+            // TraceQL query: find traces with vaadin.navigation.route attribute set
+            // This only exists on Navigate: spans from actual UI navigation
+            String query = URLEncoder.encode("{span.vaadin.navigation.route!=\"\"}", StandardCharsets.UTF_8);
             String url = String.format(
                     "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
                     query, fiveMinutesAgo, nowSeconds);
