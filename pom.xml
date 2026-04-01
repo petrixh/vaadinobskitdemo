@@ -214,9 +214,7 @@
                                 <phase>compile</phase>
                             </execution>
                         </executions>
-                        <configuration>
-                            <productionMode>true</productionMode>
-                        </configuration>
+                        <!-- productionMode is auto-enabled by build-frontend goal since Vaadin 25 -->
                     </plugin>
                 </plugins>
             </build>
