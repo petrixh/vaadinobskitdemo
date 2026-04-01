@@ -3,8 +3,9 @@ package com.example.application;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
-import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.lumo.Lumo;
 
 /**
  * The entry point of the Spring Boot application.
@@ -14,7 +15,9 @@ import com.vaadin.flow.theme.Theme;
  *
  */
 @SpringBootApplication
-@Theme(value = "kitstest")
+@StyleSheet(Lumo.STYLESHEET)
+@StyleSheet(Lumo.UTILITY_STYLESHEET)
+@StyleSheet("themes/kitstest/styles.css")
 //@PWA(name = "KitsTest", shortName = "KitsTest", offlineResources = {})
 //@Push(transport = Transport.LONG_POLLING)
 public class Application implements AppShellConfigurator {

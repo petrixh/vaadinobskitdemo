@@ -1,6 +1,6 @@
 # Observability Kit Demo
 
-A test/demo setup for Observability Kit. For the Grafana part, this project references (as a submodule) the project: https://github.com/petrixh/observability-grafana-setup
+A test/demo setup for Observability Kit using **Vaadin 25.0.2** and **Spring Boot 4.0.2** (Java 21). For the Grafana part, this project references (as a submodule) the project: https://github.com/petrixh/observability-grafana-setup
 
 It is recommended that you run this on a system with: 
 - 4 or "multiple" cores/threads (some leaky ops are heavy, but it will always use one less than available unless only one is available)

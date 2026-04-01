@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Vaadin Observability Kit Demo — a Vaadin 24.9.5 + Spring Boot 3.5.7 + Java 21 application demonstrating observability/tracing with OpenTelemetry. Uses H2 in-memory database, Spring Data JPA, and the Vaadin Observability Kit Agent (3.1.0).
+Vaadin Observability Kit Demo — a Vaadin 25.0.2 + Spring Boot 4.0.2 + Java 21 application demonstrating observability/tracing with OpenTelemetry. Uses H2 in-memory database, Spring Data JPA, and the Vaadin Observability Kit Agent (3.1.0).
 
 ## Build & Run Commands
 
