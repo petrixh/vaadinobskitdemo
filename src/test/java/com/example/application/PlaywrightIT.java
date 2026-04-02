@@ -147,10 +147,11 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + port + "/about");
         page.navigate("http://hostmachine:" + port + "/master-detail-slow");
 
-        // Wait for traces to be flushed to Tempo (retry up to 60s)
+        // Wait for traces to be flushed to Tempo (retry up to 90s — Tempo 2.9 needs
+        // time to flush WAL to blocks before attribute search works)
         boolean hasVaadinNavigationTraces = false;
         long start = System.currentTimeMillis();
-        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
+        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 90 * 1000)) {
             hasVaadinNavigationTraces = hasVaadinInstrumentedTraces();
             if (!hasVaadinNavigationTraces) {
                 try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
