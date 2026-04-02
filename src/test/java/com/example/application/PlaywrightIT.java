@@ -153,17 +153,26 @@ public class PlaywrightIT {
         // blocks in Tempo 2.9+. Checking for route names (not just service name)
         // ensures the VOKS Vaadin instrumentation is actually creating request
         // handler spans for view navigations, not just Spring/JPA auto-instrumented spans.
+        //
+        // DIAGNOSTIC: using 10-minute timeout to determine if navigation traces
+        // eventually appear or genuinely never reach Tempo in CI.
         boolean hasNavigationTraces = false;
         long start = System.currentTimeMillis();
-        while (!hasNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
+        long timeoutMs = 10 * 60 * 1000; // 10 minutes
+        while (!hasNavigationTraces && (System.currentTimeMillis() - start < timeoutMs)) {
             hasNavigationTraces = hasNavigationTraceInTempo();
             if (!hasNavigationTraces) {
-                try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
+                long elapsed = (System.currentTimeMillis() - start) / 1000;
+                System.out.println("VOKS check: no navigation traces yet after " + elapsed + "s, retrying...");
+                try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
+        long totalWait = (System.currentTimeMillis() - start) / 1000;
+        System.out.println("VOKS check: " + (hasNavigationTraces ? "FOUND" : "NOT FOUND") +
+                " after " + totalWait + "s");
         assertTrue(hasNavigationTraces,
                 () -> "Tempo has no navigation traces (rootTraceName like /hello or /about) after " +
-                        "navigating views. VOKS Vaadin instrumentation may not be applied — " +
+                        totalWait + "s. VOKS Vaadin instrumentation may not be applied — " +
                         "check agent version compatibility with Vaadin version.");
     }
 
