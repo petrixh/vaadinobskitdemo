@@ -147,21 +147,24 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + port + "/about");
         page.navigate("http://hostmachine:" + port + "/master-detail-slow");
 
-        // Poll Tempo for traces from the "vaadin" service (retry up to 60s).
-        // Uses an unfiltered {} query which searches the WAL directly without
-        // needing blocks to be flushed — attribute-filtered queries only work
-        // on completed blocks in Tempo 2.9+.
-        boolean hasVaadinTraces = false;
+        // Poll Tempo for traces whose rootTraceName matches a navigated view route
+        // (e.g. "/hello", "/about"). Uses an unfiltered {} query which searches
+        // the WAL directly — attribute-filtered queries only work on completed
+        // blocks in Tempo 2.9+. Checking for route names (not just service name)
+        // ensures the VOKS Vaadin instrumentation is actually creating request
+        // handler spans for view navigations, not just Spring/JPA auto-instrumented spans.
+        boolean hasNavigationTraces = false;
         long start = System.currentTimeMillis();
-        while (!hasVaadinTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
-            hasVaadinTraces = hasVaadinInstrumentedTraces();
-            if (!hasVaadinTraces) {
+        while (!hasNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
+            hasNavigationTraces = hasNavigationTraceInTempo();
+            if (!hasNavigationTraces) {
                 try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        assertTrue(hasVaadinTraces,
-                () -> "Tempo has no traces from the vaadin service after navigating views. " +
-                        "VOKS instrumentation is not applied or traces are not reaching Tempo.");
+        assertTrue(hasNavigationTraces,
+                () -> "Tempo has no navigation traces (rootTraceName like /hello or /about) after " +
+                        "navigating views. VOKS Vaadin instrumentation may not be applied — " +
+                        "check agent version compatibility with Vaadin version.");
     }
 
     private int smokeTest(int counter) {
@@ -286,21 +289,23 @@ public class PlaywrightIT {
     }
 
     /**
-     * Checks Tempo for traces from the "vaadin" service using an unfiltered {}
-     * query. This searches the WAL directly without needing completed blocks,
-     * which is important because Tempo 2.9 only supports attribute-filtered
-     * queries on completed blocks (not WAL). The presence of traces with
-     * rootServiceName "vaadin" proves the VOKS agent is active and sending data.
+     * Checks Tempo for traces whose rootTraceName matches a view route we
+     * navigated to (e.g. "/hello", "/about"). Uses an unfiltered {} query
+     * because Tempo 2.9 only supports attribute-filtered queries on completed
+     * blocks, not the WAL. Checking rootTraceName for actual Vaadin view routes
+     * catches the silent failure case where Spring/JPA spans reach Tempo but
+     * VOKS Vaadin instrumentation is not applied.
      */
-    public boolean hasVaadinInstrumentedTraces() {
+    public boolean hasNavigationTraceInTempo() {
         try {
             HttpClient client = HttpClient.newHttpClient();
             long nowSeconds = Instant.now().getEpochSecond();
             long fiveMinutesAgo = nowSeconds - 300;
 
+            // Fetch enough traces to find navigation ones among startup/JPA traces
             String query = URLEncoder.encode("{}", StandardCharsets.UTF_8);
             String url = String.format(
-                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=5&start=%d&end=%d",
+                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=20&start=%d&end=%d",
                     query, fiveMinutesAgo, nowSeconds);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -309,13 +314,23 @@ public class PlaywrightIT {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Vaadin Traces - Status code: " + response.statusCode());
-            System.out.println("Vaadin Traces - Response: " + response.body());
+            System.out.println("Navigation Traces - Status code: " + response.statusCode());
+            System.out.println("Navigation Traces - Response: " + response.body());
 
-            return response.statusCode() == 200
-                    && response.body().contains("\"rootServiceName\":\"vaadin\"");
+            // Check for rootTraceName matching view routes we navigated to.
+            // These are created by VOKS Vaadin instrumentation on the request
+            // handler, NOT by generic Spring/Servlet auto-instrumentation.
+            String body = response.body();
+            boolean hasViewRoute = body.contains("\"rootTraceName\":\"/hello\"")
+                    || body.contains("\"rootTraceName\":\"/about\"")
+                    || body.contains("\"rootTraceName\":\"/master-detail-slow\"");
+
+            if (hasViewRoute) {
+                System.out.println("Navigation Traces - Found Vaadin view route traces");
+            }
+            return response.statusCode() == 200 && hasViewRoute;
         } catch (Exception e) {
-            System.out.println("Vaadin Traces Error: ");
+            System.out.println("Navigation Traces Error: ");
             e.printStackTrace();
             return false;
         }
