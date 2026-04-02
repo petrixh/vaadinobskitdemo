@@ -302,10 +302,13 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long fiveMinutesAgo = nowSeconds - 300;
 
-            // Fetch enough traces to find navigation ones among startup/JPA traces
+            // Fetch a large batch of traces to find navigation ones among the
+            // startup JPA INSERT/DROP traces that dominate the early results.
+            // The Tempo WAL search returns traces in ingestion order, so startup
+            // traces come first and navigation traces may only appear further down.
             String query = URLEncoder.encode("{}", StandardCharsets.UTF_8);
             String url = String.format(
-                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=20&start=%d&end=%d",
+                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=200&start=%d&end=%d",
                     query, fiveMinutesAgo, nowSeconds);
 
             HttpRequest request = HttpRequest.newBuilder()
