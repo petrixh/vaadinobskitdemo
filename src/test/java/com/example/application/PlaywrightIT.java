@@ -130,14 +130,14 @@ public class PlaywrightIT {
 
     /**
      * Verifies that the VOKS agent Vaadin instrumentation is actually applied
-     * by navigating views and checking Tempo for Navigate: spans with
-     * vaadin.navigation.route attribute. This catches silent muzzle failures
-     * where standard OTel traces (JPA, Spring) work but Vaadin UI instrumentation
-     * is not applied due to version incompatibility.
+     * by navigating views and checking Tempo for spans with vaadin.flow.version
+     * attribute. This catches silent muzzle failures where standard OTel traces
+     * (JPA, Spring) work but Vaadin UI instrumentation is not applied due to
+     * version incompatibility.
      */
     @Test
     public void testVaadinInstrumentationActive() {
-        // Navigate a few views to generate Vaadin Navigate: spans
+        // Navigate a few views to generate Vaadin-instrumented spans
         page.navigate("http://hostmachine:" + port + "/");
         assertThat(page.getByText("Service health")).isVisible();
 
@@ -149,16 +149,16 @@ public class PlaywrightIT {
 
         // Wait for traces to be flushed to Tempo (retry up to 90s — Tempo 2.9 needs
         // time to flush WAL to blocks before attribute search works)
-        boolean hasVaadinNavigationTraces = false;
+        boolean hasVaadinTraces = false;
         long start = System.currentTimeMillis();
-        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 90 * 1000)) {
-            hasVaadinNavigationTraces = hasVaadinInstrumentedTraces();
-            if (!hasVaadinNavigationTraces) {
+        while (!hasVaadinTraces && (System.currentTimeMillis() - start < 90 * 1000)) {
+            hasVaadinTraces = hasVaadinInstrumentedTraces();
+            if (!hasVaadinTraces) {
                 try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        assertTrue(hasVaadinNavigationTraces,
-                () -> "Tempo has no traces with vaadin.navigation.route attribute after navigating views. " +
+        assertTrue(hasVaadinTraces,
+                () -> "Tempo has no traces with vaadin.flow.version attribute after navigating views. " +
                         "VOKS Vaadin instrumentation is not applied - check agent version compatibility with Vaadin version.");
     }
 
@@ -284,11 +284,9 @@ public class PlaywrightIT {
     }
 
     /**
-     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.navigation.route
-     * span attribute. This attribute is ONLY set on Navigate: spans created by VOKS
-     * Vaadin UI instrumentation during actual view navigations (from the smoke test).
-     * Unlike vaadin.request.type which can appear on startup traces, navigation spans
-     * prove the bytecode instrumentation is actively applied to Vaadin request handlers.
+     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.flow.version
+     * span attribute. This attribute is set by VOKS Vaadin UI instrumentation on
+     * request handler spans and proves the bytecode instrumentation is actively applied.
      */
     public boolean hasVaadinInstrumentedTraces() {
         try {
@@ -296,9 +294,9 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long fiveMinutesAgo = nowSeconds - 300;
 
-            // TraceQL query: find traces with vaadin.navigation.route attribute set
-            // This only exists on Navigate: spans from actual UI navigation
-            String query = URLEncoder.encode("{span.vaadin.navigation.route!=\"\"}", StandardCharsets.UTF_8);
+            // TraceQL query: find traces with vaadin.flow.version attribute set
+            // This is set by VOKS instrumentation on Vaadin request handler spans
+            String query = URLEncoder.encode("{span.vaadin.flow.version!=\"\"}", StandardCharsets.UTF_8);
             String url = String.format(
                     "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
                     query, fiveMinutesAgo, nowSeconds);
