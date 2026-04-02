@@ -9,9 +9,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,16 +21,16 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-//TODO clean up one day.... 
+// Uses the Maven spring-boot:start app instance (port 8080) which has the
+// OTel agent attached, rather than spawning a second uninstrumented instance
+// via @SpringBootTest.
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT) 
-@Tag("playwright") 
+@Tag("playwright")
 public class PlaywrightIT {
 
-    // This will be injected with the random free port
-    // number that was allocated
-    @LocalServerPort 
-    private int port; // = 8080;
+    // The app is started by Maven spring-boot:start on port 8080 with the
+    // observability agent attached. We connect to that instance directly.
+    private int port = 8080;
 
     boolean takeScreenshots = true; 
 
@@ -153,26 +150,17 @@ public class PlaywrightIT {
         // blocks in Tempo 2.9+. Checking for route names (not just service name)
         // ensures the VOKS Vaadin instrumentation is actually creating request
         // handler spans for view navigations, not just Spring/JPA auto-instrumented spans.
-        //
-        // DIAGNOSTIC: using 10-minute timeout to determine if navigation traces
-        // eventually appear or genuinely never reach Tempo in CI.
         boolean hasNavigationTraces = false;
         long start = System.currentTimeMillis();
-        long timeoutMs = 10 * 60 * 1000; // 10 minutes
-        while (!hasNavigationTraces && (System.currentTimeMillis() - start < timeoutMs)) {
+        while (!hasNavigationTraces && (System.currentTimeMillis() - start < 60_000)) {
             hasNavigationTraces = hasNavigationTraceInTempo();
             if (!hasNavigationTraces) {
-                long elapsed = (System.currentTimeMillis() - start) / 1000;
-                System.out.println("VOKS check: no navigation traces yet after " + elapsed + "s, retrying...");
-                try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
+                try { Thread.sleep(3000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        long totalWait = (System.currentTimeMillis() - start) / 1000;
-        System.out.println("VOKS check: " + (hasNavigationTraces ? "FOUND" : "NOT FOUND") +
-                " after " + totalWait + "s");
         assertTrue(hasNavigationTraces,
-                () -> "Tempo has no navigation traces (rootTraceName like /hello or /about) after " +
-                        totalWait + "s. VOKS Vaadin instrumentation may not be applied — " +
+                () -> "Tempo has no navigation traces (rootTraceName like /hello or /about) after 60s. " +
+                        "VOKS Vaadin instrumentation may not be applied — " +
                         "check agent version compatibility with Vaadin version.");
     }
 
