@@ -5,8 +5,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Browser.NewContextOptions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
-import com.microsoft.playwright.options.AriaRole;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -88,29 +86,8 @@ public class PlaywrightIT {
         var browserCtx = browser.newContext(ctxOptions); 
         page = browserCtx.newPage(); 
 
-        //Verify grafana has data... 
-        page.navigate("http://hostmachine:" + 3000 + "/");
-        
-        
-        //Take screenshot and save it in the target folder
-        takeScreenshot("Screenshot-"+imageCounter++ +".png", page); 
-
-        page.getByPlaceholder("email or username").fill("admin");
-        page.getByLabel("Password input field").fill("admin");
-        
-        takeScreenshot("Screenshot-"+imageCounter++ +".png", page); 
-
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login button")).click();
-
-        try{
-            Thread.sleep(250); 
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-		}  
-
-        
-        page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGVy/vaadin-dashboard-3-1-0?orgId=1&refresh=5s");
+        //Verify grafana has data (anonymous auth enabled, no login needed)
+        page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGV4/vaadin-dashboard-4-0-0?orgId=1&refresh=5s");
 
 
 
@@ -248,8 +225,8 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long sixtySecondsAgo = nowSeconds - 600;
             
-            // Use the correct metric name with label filter
-            String query = URLEncoder.encode("jvm_cpu_recent_utilization{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            // Use the correct metric name with label filter (4.0.0 agent appends _ratio suffix)
+            String query = URLEncoder.encode("jvm_cpu_recent_utilization_ratio{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
             String url = String.format("http://localhost:9090/api/v1/query_range?query=%s&start=%d&end=%d&step=15s", 
                                     query, sixtySecondsAgo, nowSeconds);
             
@@ -280,8 +257,8 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long sixtySecondsAgo = nowSeconds - 600;
             
-            // Try JVM memory with vaadin job filter
-            String query = URLEncoder.encode("jvm_memory_used{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            // Try JVM memory with vaadin job filter (4.0.0 agent appends _bytes suffix)
+            String query = URLEncoder.encode("jvm_memory_used_bytes{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
             String url = String.format("http://localhost:9090/api/v1/query_range?query=%s&start=%d&end=%d&step=15s", 
                                     query, sixtySecondsAgo, nowSeconds);
             
@@ -327,8 +304,6 @@ public class PlaywrightIT {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .header("Authorization", "Basic " + java.util.Base64.getEncoder()
-                            .encodeToString("admin:admin".getBytes()))
                     .GET()
                     .build();
 
@@ -349,14 +324,12 @@ public class PlaywrightIT {
         try {
             HttpClient client = HttpClient.newHttpClient();
             
-            // Use the correct metric name for Grafana query
-            String query = URLEncoder.encode("jvm_cpu_recent_utilization{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
-            String url = String.format("http://localhost:3000/api/datasources/proxy/1/api/v1/query?query=%s", query);
-            
+            // Use the correct metric name for Grafana query (4.0.0 agent appends _ratio suffix)
+            String query = URLEncoder.encode("jvm_cpu_recent_utilization_ratio{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            String url = String.format("http://localhost:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=%s", query);
+
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "Basic " + java.util.Base64.getEncoder()
-                       .encodeToString("admin:admin".getBytes()))
                 .GET()
                 .build();
                 
