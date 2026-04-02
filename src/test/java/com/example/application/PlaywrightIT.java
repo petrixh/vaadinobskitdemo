@@ -287,9 +287,11 @@ public class PlaywrightIT {
     }
 
     /**
-     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.flow.version
+     * Checks Tempo directly for traces that have the vaadin.flow.version
      * span attribute. This attribute is set by VOKS Vaadin UI instrumentation on
      * request handler spans and proves the bytecode instrumentation is actively applied.
+     * Uses the Tempo HTTP API directly (port 3200 mapped to a dynamic host port)
+     * via the Grafana proxy to avoid needing to discover the dynamic port.
      */
     public boolean hasVaadinInstrumentedTraces() {
         try {
@@ -297,8 +299,16 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long fiveMinutesAgo = nowSeconds - 300;
 
-            // TraceQL query: find traces with vaadin.flow.version attribute set
-            // This is set by VOKS instrumentation on Vaadin request handler spans
+            // First check if Tempo has ANY traces at all (helps diagnose pipeline issues)
+            String anyQuery = URLEncoder.encode("{}", StandardCharsets.UTF_8);
+            String anyUrl = String.format(
+                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
+                    anyQuery, fiveMinutesAgo, nowSeconds);
+            HttpRequest anyRequest = HttpRequest.newBuilder().uri(URI.create(anyUrl)).GET().build();
+            HttpResponse<String> anyResponse = client.send(anyRequest, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Any Traces - Status: " + anyResponse.statusCode() + " Response: " + anyResponse.body());
+
+            // Now check for vaadin-specific traces
             String query = URLEncoder.encode("{span.vaadin.flow.version!=\"\"}", StandardCharsets.UTF_8);
             String url = String.format(
                     "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
