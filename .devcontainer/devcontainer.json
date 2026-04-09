@@ -2,7 +2,7 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-in-docker
 {
 	"name": "Java 21 Docker-in-Docker Dev Container",
-	"image": "mcr.microsoft.com/devcontainers/java:21",
+	"image": "mcr.microsoft.com/devcontainers/java:21-bookworm",
 	"forwardPorts": [8080, 3000],
 
 //	"runArgs": [
