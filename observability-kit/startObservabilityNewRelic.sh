@@ -20,7 +20,9 @@ echo "App jar detected under target/$APP_JAR"
 echo 'Checking for agent jar, downloading if necessary...'
 ./_downloadAgent.sh
 
-AGENT_JAR=$(ls ../target/observability-kit-agent*.jar)
+# Take the jar name from _downloadAgent.sh so there is one source of truth for the
+# agent version. A glob would break as soon as an older agent jar is left in target/.
+AGENT_JAR=$(sed -n 's/^AGENT_JAR=//p' ./_downloadAgent.sh)
 echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
 
 

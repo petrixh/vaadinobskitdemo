@@ -4,7 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Vaadin Observability Kit Demo — a Vaadin 25.1.1 + Spring Boot 4.0.5 + Java 21 application demonstrating observability/tracing with OpenTelemetry. Uses H2 in-memory database, Spring Data JPA, and the Vaadin Observability Kit Agent (3.1.0).
+Vaadin Observability Kit Demo — a Vaadin 25.2.6 + Spring Boot 4.1.1 + Java 21 application demonstrating observability/tracing with OpenTelemetry. Uses H2 in-memory database, Spring Data JPA, and the Vaadin Observability Kit Agent (4.1.1).
+
+### Version coupling (read before bumping anything)
+
+The app-classpath OpenTelemetry versions MUST be `<=` the versions bundled inside the
+Observability Kit **agent**, or Vaadin instrumentation fails **silently** — the build passes,
+JPA/Spring traces still flow, and only the Vaadin spans vanish. Read the ceiling from
+`https://repo1.maven.org/maven2/com/vaadin/observability-kit/{V}/observability-kit-{V}.pom`
+(`opentelemetry.version`, `opentelemetry.javaagent.version`). Kit ordering is **not monotonic** —
+4.0.1 bundles newer OTel than 4.1.0.
+
+The Vaadin↔kit pairing is authoritative in `<observability.kit.starter.version>` inside
+`vaadin-bom/{V}/vaadin-bom-{V}.pom`; do not infer it from the kit's own `flow.version`.
+
+Changing the agent version touches three files: `observability-kit/_downloadAgent.sh`
+(`AGENT_JAR` + `AGENT_DOWNLOAD_PATH`), the `observability.kit.agent.version` property in
+`pom.xml`, and the OTel ceiling caps in `.github/dependabot.yml`.
+
+To prove instrumentation is actually live, don't trust a green build: check the agent's startup
+line `VersionLogger ... version: <otel>~vaadin-<kit>` and run
+`PlaywrightIT.testVaadinInstrumentationActive`, which queries Tempo for the
+`vaadin.navigation.route` span attribute that only VOKS Vaadin instrumentation sets. When
+re-verifying by hand, wipe the stack first (`docker compose down -v` in
+`observability-kit/observability-grafana-setup`) — Prometheus and Tempo retain the previous run's
+data well inside the tests' lookback windows, so assertions can otherwise pass on stale telemetry.
 
 ## Build & Run Commands
 
