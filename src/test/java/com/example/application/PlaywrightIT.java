@@ -144,24 +144,30 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + port + "/about");
         page.navigate("http://hostmachine:" + port + "/master-detail-slow");
 
-        // Poll Tempo for traces whose rootTraceName matches a navigated view route
-        // (e.g. "/hello", "/about"). Uses an unfiltered {} query which searches
-        // the WAL directly — attribute-filtered queries only work on completed
-        // blocks in Tempo 2.9+. Checking for route names (not just service name)
-        // ensures the VOKS Vaadin instrumentation is actually creating request
-        // handler spans for view navigations, not just Spring/JPA auto-instrumented spans.
-        boolean hasNavigationTraces = false;
+        // Poll Tempo for a span carrying the vaadin.navigation.route attribute. That
+        // attribute is set ONLY by the VOKS Vaadin instrumentation on a view navigation,
+        // so - unlike a root span name, which generic Spring/Servlet instrumentation can
+        // also produce - nothing else can satisfy this assertion. That matters because the
+        // failure this test exists to catch is silent: on an agent/OpenTelemetry version
+        // mismatch the build passes and JPA/Spring traces keep flowing while the Vaadin
+        // spans quietly disappear.
+        //
+        // The TraceQL attribute filter only matches once Tempo has completed the block
+        // (see max_block_duration in the Grafana setup's tempo.yaml), so this polls rather
+        // than asking once - it typically resolves in ~30s, well inside the budget below.
+        boolean instrumented = false;
         long start = System.currentTimeMillis();
-        while (!hasNavigationTraces && (System.currentTimeMillis() - start < 60_000)) {
-            hasNavigationTraces = hasNavigationTraceInTempo();
-            if (!hasNavigationTraces) {
+        while (!instrumented && (System.currentTimeMillis() - start < 90_000)) {
+            instrumented = hasVaadinNavAttributeViaTraceQL();
+            if (!instrumented) {
                 try { Thread.sleep(3000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        assertTrue(hasNavigationTraces,
-                () -> "Tempo has no navigation traces (rootTraceName like /hello or /about) after 60s. " +
-                        "VOKS Vaadin instrumentation may not be applied — " +
-                        "check agent version compatibility with Vaadin version.");
+        assertTrue(instrumented,
+                () -> "No span carrying the " + VAADIN_NAV_ATTRIBUTE + " attribute reached Tempo within "
+                        + "90s of navigating views. VOKS Vaadin instrumentation is not applied - check the "
+                        + "agent version against the Vaadin version, and that the app-classpath "
+                        + "OpenTelemetry versions are <= the versions bundled in the agent.");
     }
 
     private int smokeTest(int counter) {
@@ -293,47 +299,41 @@ public class PlaywrightIT {
      * catches the silent failure case where Spring/JPA spans reach Tempo but
      * VOKS Vaadin instrumentation is not applied.
      */
-    public boolean hasNavigationTraceInTempo() {
+    /**
+     * Span attribute set only by VOKS Vaadin UI instrumentation on view navigation.
+     */
+    private static final String VAADIN_NAV_ATTRIBUTE = "vaadin.navigation.route";
+
+    private static final String TEMPO_PROXY =
+            "http://localhost:3000/api/datasources/proxy/uid/tempo";
+
+    private String httpGet(String url) {
         try {
-            HttpClient client = HttpClient.newHttpClient();
-            long nowSeconds = Instant.now().getEpochSecond();
-            long fiveMinutesAgo = nowSeconds - 300;
-
-            // Fetch a large batch of traces to find navigation ones among the
-            // startup JPA INSERT/DROP traces that dominate the early results.
-            // The Tempo WAL search returns traces in ingestion order, so startup
-            // traces come first and navigation traces may only appear further down.
-            String query = URLEncoder.encode("{}", StandardCharsets.UTF_8);
-            String url = String.format(
-                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=200&start=%d&end=%d",
-                    query, fiveMinutesAgo, nowSeconds);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Navigation Traces - Status code: " + response.statusCode());
-            System.out.println("Navigation Traces - Response: " + response.body());
-
-            // Check for rootTraceName matching view routes we navigated to.
-            // These are created by VOKS Vaadin instrumentation on the request
-            // handler, NOT by generic Spring/Servlet auto-instrumentation.
-            String body = response.body();
-            boolean hasViewRoute = body.contains("\"rootTraceName\":\"/hello\"")
-                    || body.contains("\"rootTraceName\":\"/about\"")
-                    || body.contains("\"rootTraceName\":\"/master-detail-slow\"");
-
-            if (hasViewRoute) {
-                System.out.println("Navigation Traces - Found Vaadin view route traces");
-            }
-            return response.statusCode() == 200 && hasViewRoute;
+            HttpResponse<String> r = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder().uri(URI.create(url)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+            return r.statusCode() == 200 ? r.body() : null;
         } catch (Exception e) {
-            System.out.println("Navigation Traces Error: ");
-            e.printStackTrace();
-            return false;
+            System.out.println("Tempo request failed: " + e);
+            return null;
         }
+    }
+
+    private String tempoSearch(String traceQl, int limit) {
+        long now = Instant.now().getEpochSecond();
+        return httpGet(String.format("%s/api/search?q=%s&limit=%d&start=%d&end=%d",
+                TEMPO_PROXY, URLEncoder.encode(traceQl, StandardCharsets.UTF_8), limit, now - 300, now));
+    }
+
+    /**
+     * Asks for the VOKS attribute with a TraceQL filter. Only matches spans that live in a
+     * block Tempo has already completed, so it can legitimately miss for the first ~30s.
+     */
+    public boolean hasVaadinNavAttributeViaTraceQL() {
+        String body = tempoSearch("{span." + VAADIN_NAV_ATTRIBUTE + "!=\"\"}", 1);
+        boolean found = body != null && body.contains("\"traceID\"");
+        System.out.println("VOKS attribute via TraceQL: " + (found ? "FOUND" : "not yet"));
+        return found;
     }
 
     public boolean hasRecentMetricsViaGrafana() {
