@@ -20,15 +20,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up JDK 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
 
-    - name: Start preloading Grafana, Obskit JAR and Playwright in backgorund...
+    - name: Start preloading Grafana, Obskit JAR and Playwright in background...
       run: ( git submodule update --init --recursive && cd observability-kit/observability-grafana-setup && docker compose pull && cd .. && ./_downloadAgent.sh && cd .. && cd playwright && docker compose pull) &
 
     - name: Build with Maven
