@@ -5,15 +5,10 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Browser.NewContextOptions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
-import com.microsoft.playwright.options.AriaRole;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,16 +21,16 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-//TODO clean up one day.... 
+// Uses the Maven spring-boot:start app instance (port 8080) which has the
+// OTel agent attached, rather than spawning a second uninstrumented instance
+// via @SpringBootTest.
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT) 
-@Tag("playwright") 
+@Tag("playwright")
 public class PlaywrightIT {
 
-    // This will be injected with the random free port
-    // number that was allocated
-    @LocalServerPort 
-    private int port; // = 8080;
+    // The app is started by Maven spring-boot:start on port 8080 with the
+    // observability agent attached. We connect to that instance directly.
+    private int port = 8080;
 
     boolean takeScreenshots = true; 
 
@@ -88,29 +83,8 @@ public class PlaywrightIT {
         var browserCtx = browser.newContext(ctxOptions); 
         page = browserCtx.newPage(); 
 
-        //Verify grafana has data... 
-        page.navigate("http://hostmachine:" + 3000 + "/");
-        
-        
-        //Take screenshot and save it in the target folder
-        takeScreenshot("Screenshot-"+imageCounter++ +".png", page); 
-
-        page.getByPlaceholder("email or username").fill("admin");
-        page.getByLabel("Password input field").fill("admin");
-        
-        takeScreenshot("Screenshot-"+imageCounter++ +".png", page); 
-
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login button")).click();
-
-        try{
-            Thread.sleep(250); 
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-		}  
-
-        
-        page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGVy/vaadin-dashboard-3-1-0?orgId=1&refresh=5s");
+        //Verify grafana has data (anonymous auth enabled, no login needed)
+        page.navigate("http://hostmachine:" + 3000 + "/d/6_bNYpGV4/vaadin-dashboard-4-0-0?orgId=1&refresh=5s");
 
 
 
@@ -153,14 +127,14 @@ public class PlaywrightIT {
 
     /**
      * Verifies that the VOKS agent Vaadin instrumentation is actually applied
-     * by navigating views and checking Tempo for Navigate: spans with
-     * vaadin.navigation.route attribute. This catches silent muzzle failures
-     * where standard OTel traces (JPA, Spring) work but Vaadin UI instrumentation
-     * is not applied due to version incompatibility.
+     * by navigating views and checking Tempo for spans with vaadin.flow.version
+     * attribute. This catches silent muzzle failures where standard OTel traces
+     * (JPA, Spring) work but Vaadin UI instrumentation is not applied due to
+     * version incompatibility.
      */
     @Test
     public void testVaadinInstrumentationActive() {
-        // Navigate a few views to generate Vaadin Navigate: spans
+        // Navigate a few views to generate Vaadin-instrumented spans
         page.navigate("http://hostmachine:" + port + "/");
         assertThat(page.getByText("Service health")).isVisible();
 
@@ -170,18 +144,30 @@ public class PlaywrightIT {
         page.navigate("http://hostmachine:" + port + "/about");
         page.navigate("http://hostmachine:" + port + "/master-detail-slow");
 
-        // Wait for traces to be flushed to Tempo (retry up to 60s)
-        boolean hasVaadinNavigationTraces = false;
+        // Poll Tempo for a span carrying the vaadin.navigation.route attribute. That
+        // attribute is set ONLY by the VOKS Vaadin instrumentation on a view navigation,
+        // so - unlike a root span name, which generic Spring/Servlet instrumentation can
+        // also produce - nothing else can satisfy this assertion. That matters because the
+        // failure this test exists to catch is silent: on an agent/OpenTelemetry version
+        // mismatch the build passes and JPA/Spring traces keep flowing while the Vaadin
+        // spans quietly disappear.
+        //
+        // The TraceQL attribute filter only matches once Tempo has completed the block
+        // (see max_block_duration in the Grafana setup's tempo.yaml), so this polls rather
+        // than asking once - it typically resolves in ~30s, well inside the budget below.
+        boolean instrumented = false;
         long start = System.currentTimeMillis();
-        while (!hasVaadinNavigationTraces && (System.currentTimeMillis() - start < 60 * 1000)) {
-            hasVaadinNavigationTraces = hasVaadinInstrumentedTraces();
-            if (!hasVaadinNavigationTraces) {
-                try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
+        while (!instrumented && (System.currentTimeMillis() - start < 90_000)) {
+            instrumented = hasVaadinNavAttributeViaTraceQL();
+            if (!instrumented) {
+                try { Thread.sleep(3000); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         }
-        assertTrue(hasVaadinNavigationTraces,
-                () -> "Tempo has no traces with vaadin.navigation.route attribute after navigating views. " +
-                        "VOKS Vaadin instrumentation is not applied - check agent version compatibility with Vaadin version.");
+        assertTrue(instrumented,
+                () -> "No span carrying the " + VAADIN_NAV_ATTRIBUTE + " attribute reached Tempo within "
+                        + "90s of navigating views. VOKS Vaadin instrumentation is not applied - check the "
+                        + "agent version against the Vaadin version, and that the app-classpath "
+                        + "OpenTelemetry versions are <= the versions bundled in the agent.");
     }
 
     private int smokeTest(int counter) {
@@ -248,8 +234,8 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long sixtySecondsAgo = nowSeconds - 600;
             
-            // Use the correct metric name with label filter
-            String query = URLEncoder.encode("jvm_cpu_recent_utilization{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            // Use the correct metric name with label filter (4.0.0 agent appends _ratio suffix)
+            String query = URLEncoder.encode("jvm_cpu_recent_utilization_ratio{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
             String url = String.format("http://localhost:9090/api/v1/query_range?query=%s&start=%d&end=%d&step=15s", 
                                     query, sixtySecondsAgo, nowSeconds);
             
@@ -280,8 +266,8 @@ public class PlaywrightIT {
             long nowSeconds = Instant.now().getEpochSecond();
             long sixtySecondsAgo = nowSeconds - 600;
             
-            // Try JVM memory with vaadin job filter
-            String query = URLEncoder.encode("jvm_memory_used{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            // Try JVM memory with vaadin job filter (4.0.0 agent appends _bytes suffix)
+            String query = URLEncoder.encode("jvm_memory_used_bytes{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
             String url = String.format("http://localhost:9090/api/v1/query_range?query=%s&start=%d&end=%d&step=15s", 
                                     query, sixtySecondsAgo, nowSeconds);
             
@@ -306,57 +292,60 @@ public class PlaywrightIT {
     }
 
     /**
-     * Checks Tempo (via Grafana proxy) for traces that have the vaadin.navigation.route
-     * span attribute. This attribute is ONLY set on Navigate: spans created by VOKS
-     * Vaadin UI instrumentation during actual view navigations (from the smoke test).
-     * Unlike vaadin.request.type which can appear on startup traces, navigation spans
-     * prove the bytecode instrumentation is actively applied to Vaadin request handlers.
+     * Checks Tempo for traces whose rootTraceName matches a view route we
+     * navigated to (e.g. "/hello", "/about"). Uses an unfiltered {} query
+     * because Tempo 2.9 only supports attribute-filtered queries on completed
+     * blocks, not the WAL. Checking rootTraceName for actual Vaadin view routes
+     * catches the silent failure case where Spring/JPA spans reach Tempo but
+     * VOKS Vaadin instrumentation is not applied.
      */
-    public boolean hasVaadinInstrumentedTraces() {
+    /**
+     * Span attribute set only by VOKS Vaadin UI instrumentation on view navigation.
+     */
+    private static final String VAADIN_NAV_ATTRIBUTE = "vaadin.navigation.route";
+
+    private static final String TEMPO_PROXY =
+            "http://localhost:3000/api/datasources/proxy/uid/tempo";
+
+    private String httpGet(String url) {
         try {
-            HttpClient client = HttpClient.newHttpClient();
-            long nowSeconds = Instant.now().getEpochSecond();
-            long fiveMinutesAgo = nowSeconds - 300;
-
-            // TraceQL query: find traces with vaadin.navigation.route attribute set
-            // This only exists on Navigate: spans from actual UI navigation
-            String query = URLEncoder.encode("{span.vaadin.navigation.route!=\"\"}", StandardCharsets.UTF_8);
-            String url = String.format(
-                    "http://localhost:3000/api/datasources/proxy/uid/tempo/api/search?q=%s&limit=1&start=%d&end=%d",
-                    query, fiveMinutesAgo, nowSeconds);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Authorization", "Basic " + java.util.Base64.getEncoder()
-                            .encodeToString("admin:admin".getBytes()))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Vaadin Traces - Status code: " + response.statusCode());
-            System.out.println("Vaadin Traces - Response: " + response.body());
-
-            return response.statusCode() == 200
-                    && response.body().contains("\"traceID\"");
+            HttpResponse<String> r = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder().uri(URI.create(url)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+            return r.statusCode() == 200 ? r.body() : null;
         } catch (Exception e) {
-            System.out.println("Vaadin Traces Error: ");
-            e.printStackTrace();
-            return false;
+            System.out.println("Tempo request failed: " + e);
+            return null;
         }
+    }
+
+    private String tempoSearch(String traceQl, int limit) {
+        long now = Instant.now().getEpochSecond();
+        return httpGet(String.format("%s/api/search?q=%s&limit=%d&start=%d&end=%d",
+                TEMPO_PROXY, URLEncoder.encode(traceQl, StandardCharsets.UTF_8), limit, now - 300, now));
+    }
+
+    /**
+     * Asks for the VOKS attribute with a TraceQL filter. Only matches spans that live in a
+     * block Tempo has already completed, so it can legitimately miss for the first ~30s.
+     */
+    public boolean hasVaadinNavAttributeViaTraceQL() {
+        String body = tempoSearch("{span." + VAADIN_NAV_ATTRIBUTE + "!=\"\"}", 1);
+        boolean found = body != null && body.contains("\"traceID\"");
+        System.out.println("VOKS attribute via TraceQL: " + (found ? "FOUND" : "not yet"));
+        return found;
     }
 
     public boolean hasRecentMetricsViaGrafana() {
         try {
             HttpClient client = HttpClient.newHttpClient();
             
-            // Use the correct metric name for Grafana query
-            String query = URLEncoder.encode("jvm_cpu_recent_utilization{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
-            String url = String.format("http://localhost:3000/api/datasources/proxy/1/api/v1/query?query=%s", query);
-            
+            // Use the correct metric name for Grafana query (4.0.0 agent appends _ratio suffix)
+            String query = URLEncoder.encode("jvm_cpu_recent_utilization_ratio{exported_job=\"vaadin\"}", StandardCharsets.UTF_8);
+            String url = String.format("http://localhost:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=%s", query);
+
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "Basic " + java.util.Base64.getEncoder()
-                       .encodeToString("admin:admin".getBytes()))
                 .GET()
                 .build();
                 

@@ -141,6 +141,15 @@ Additionally, on the ImageList view there are buttons for leaking RAM. It will l
 demonstrate "out of heap space" errors this way if you wish. It uses totalSystemThreads - 1 threads for this to make it
 a bit faster (who thought generating random stuff actually takes much effort)... 
 
+## Order Processing (multi-step workflow tracing)
+The Order Processing view simulates a realistic order pipeline — validation, fraud check, inventory reservation, and payment — where each step creates OpenTelemetry spans with rich attributes. Three scenario buttons produce different trace patterns:
+
+- **Happy Path** (~480ms) — clean waterfall, all steps succeed
+- **Slow Path** (~6s) — fraud API timeout + retry, N+1 inventory queries
+- **Error Path** (~380ms) — payment declined, pipeline stops early with recorded exception
+
+See [docs/order-processing-flow.md](docs/order-processing-flow.md) for detailed flow diagrams and a span attributes reference.
+
 ## Typical Vaadin slow view demo (longer demo, still WIP)
 The MasterDetail view is implemented in a way where under "normal test" circumstances (like a developer would use) it 
 behaves "fast enough" to slip through the cracks... However, there is a button... on the About page that adds users to 
