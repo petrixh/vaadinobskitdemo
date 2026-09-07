@@ -12,7 +12,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    # TEMPORARY: filter removed so CI runs once for the stacked PR #24; reverted right after.
+    branches: [ "main" ]
 
 jobs:
   build:
