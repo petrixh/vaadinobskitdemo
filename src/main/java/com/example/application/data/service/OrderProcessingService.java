@@ -2,9 +2,9 @@ package com.example.application.data.service;
 
 import com.example.application.data.entity.CustomerOrder;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,27 +25,32 @@ public class OrderProcessingService {
     private final FraudCheckService fraudCheckService;
     private final InventoryService inventoryService;
     private final PaymentService paymentService;
+    private final ObservationRegistry registry;
 
     public OrderProcessingService(CustomerOrderRepository orderRepository,
                                   OrderValidationService validationService,
                                   FraudCheckService fraudCheckService,
                                   InventoryService inventoryService,
-                                  PaymentService paymentService) {
+                                  PaymentService paymentService,
+                                  ObservationRegistry registry) {
         this.orderRepository = orderRepository;
         this.validationService = validationService;
         this.fraudCheckService = fraudCheckService;
         this.inventoryService = inventoryService;
         this.paymentService = paymentService;
+        this.registry = registry;
     }
 
-    @WithSpan("order.process")
+    @Observed(name = "order.process", contextualName = "order.process")
     public OrderResult processOrder(CustomerOrder order, String scenario) {
-        Span span = Span.current();
-        span.setAttribute("order.scenario", scenario);
-        span.setAttribute("order.customer_name", order.getCustomerName());
-        span.setAttribute("order.product", order.getProductName());
-        span.setAttribute("order.quantity", order.getQuantity());
-        span.setAttribute("order.total_amount", order.getTotalAmount());
+        Observation obs = Observations.current(registry);
+        // Low cardinality values also become tags on the order.process timer, so only
+        // bounded values go here; ids, names and durations stay on the span.
+        obs.lowCardinalityKeyValue("order.scenario", String.valueOf(scenario));
+        obs.highCardinalityKeyValue("order.customer_name", String.valueOf(order.getCustomerName()));
+        obs.highCardinalityKeyValue("order.product", String.valueOf(order.getProductName()));
+        obs.highCardinalityKeyValue("order.quantity", String.valueOf(order.getQuantity()));
+        obs.highCardinalityKeyValue("order.total_amount", String.valueOf(order.getTotalAmount()));
 
         long overallStart = System.currentTimeMillis();
         List<StepResult> steps = new ArrayList<>();
@@ -54,7 +59,7 @@ public class OrderProcessingService {
         order.setStatus("PENDING");
         order.setCreatedAt(LocalDateTime.now());
         order = orderRepository.save(order);
-        span.setAttribute("order.id", order.getId().toString());
+        obs.highCardinalityKeyValue("order.id", order.getId().toString());
 
         // Step 1: Validate
         long stepStart = System.currentTimeMillis();
@@ -64,7 +69,7 @@ public class OrderProcessingService {
             orderRepository.save(order);
             steps.add(new StepResult("Validation", System.currentTimeMillis() - stepStart, true, "Passed"));
         } catch (Exception e) {
-            return fail(order, span, steps, "Validation", stepStart, e, overallStart);
+            return fail(order, obs, steps, "Validation", stepStart, e, overallStart);
         }
 
         // Step 2: Fraud Check
@@ -76,7 +81,7 @@ public class OrderProcessingService {
             steps.add(new StepResult("Fraud Check", System.currentTimeMillis() - stepStart, true,
                     "Result: " + fraudResult.name()));
         } catch (Exception e) {
-            return fail(order, span, steps, "Fraud Check", stepStart, e, overallStart);
+            return fail(order, obs, steps, "Fraud Check", stepStart, e, overallStart);
         }
 
         // Step 3: Inventory
@@ -88,7 +93,7 @@ public class OrderProcessingService {
             steps.add(new StepResult("Inventory", System.currentTimeMillis() - stepStart, true,
                     "Reserved " + order.getQuantity() + " items"));
         } catch (Exception e) {
-            return fail(order, span, steps, "Inventory", stepStart, e, overallStart);
+            return fail(order, obs, steps, "Inventory", stepStart, e, overallStart);
         }
 
         // Step 4: Payment
@@ -100,7 +105,7 @@ public class OrderProcessingService {
             steps.add(new StepResult("Payment", System.currentTimeMillis() - stepStart, true,
                     "Transaction: " + paymentResult.transactionId()));
         } catch (Exception e) {
-            return fail(order, span, steps, "Payment", stepStart, e, overallStart);
+            return fail(order, obs, steps, "Payment", stepStart, e, overallStart);
         }
 
         // Step 5: Fulfillment
@@ -109,14 +114,14 @@ public class OrderProcessingService {
         orderRepository.save(order);
 
         long totalDuration = System.currentTimeMillis() - overallStart;
-        span.setAttribute("order.status", "FULFILLED");
-        span.setAttribute("order.duration_ms", totalDuration);
+        obs.lowCardinalityKeyValue("order.status", "FULFILLED");
+        obs.highCardinalityKeyValue("order.duration_ms", String.valueOf(totalDuration));
 
         return new OrderResult(true, order.getId().toString(), totalDuration,
                 null, null, steps);
     }
 
-    private OrderResult fail(CustomerOrder order, Span span, List<StepResult> steps,
+    private OrderResult fail(CustomerOrder order, Observation obs, List<StepResult> steps,
                              String stepName, long stepStart, Exception e, long overallStart) {
         long stepDuration = System.currentTimeMillis() - stepStart;
         steps.add(new StepResult(stepName, stepDuration, false, e.getMessage()));
@@ -127,11 +132,12 @@ public class OrderProcessingService {
         orderRepository.save(order);
 
         long totalDuration = System.currentTimeMillis() - overallStart;
-        span.setStatus(StatusCode.ERROR, "Failed at " + stepName);
-        span.recordException(e);
-        span.setAttribute("order.status", "FAILED");
-        span.setAttribute("order.failure_step", stepName);
-        span.setAttribute("order.duration_ms", totalDuration);
+        // The exception is swallowed here, so @Observed never sees it: mark the observation
+        // errored by hand. This both flags the span and adds an "error" tag to the timer.
+        obs.error(e);
+        obs.lowCardinalityKeyValue("order.status", "FAILED");
+        obs.lowCardinalityKeyValue("order.failure_step", stepName);
+        obs.highCardinalityKeyValue("order.duration_ms", String.valueOf(totalDuration));
 
         return new OrderResult(false, order.getId().toString(), totalDuration,
                 stepName, e.getMessage(), steps);

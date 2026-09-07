@@ -48,7 +48,7 @@ public class OrderProcessingView extends VerticalLayout {
         // Header
         add(new H2("Order Processing Demo"));
         add(new Paragraph("Simulates a multi-step order workflow. Each scenario generates different " +
-                "trace patterns in Grafana/Jaeger. Run a scenario, then inspect the traces to see " +
+                "trace patterns in Grafana. Run a scenario, then inspect the traces to see " +
                 "how observability helps diagnose real problems."));
 
         // Form with pre-filled demo data
@@ -204,18 +204,21 @@ public class OrderProcessingView extends VerticalLayout {
         hints.add(new H3("What to Look for in Traces"));
 
         Details happyHint = new Details("Happy Path traces",
-                new Paragraph("Clean waterfall with ~480ms total. The parent span 'order.process' contains " +
-                        "child spans for each step (order.validate, order.fraud_check, order.reserve_inventory, " +
-                        "order.process_payment). Between each step, you'll see auto-instrumented JPA " +
-                        "INSERT/UPDATE spans from the status updates. All spans are green/OK."));
+                new Paragraph("Clean waterfall with ~480ms total. The whole thing hangs under the " +
+                        "Observability Kit's 'vaadin.rpc' span for the button click. The parent span " +
+                        "'order.process' contains child spans for each step (order.validate, " +
+                        "order.fraud_check, order.reserve_inventory, order.process_payment). Between each " +
+                        "step, you'll see 'vaadin.db.query' spans from the status updates. All spans are " +
+                        "green/OK."));
         happyHint.setOpened(false);
 
         Details slowHint = new Details("Slow Path traces",
                 new Paragraph("The 'order.fraud_check' span dominates the waterfall at ~5 seconds. " +
                         "Expand it to see two child spans: 'fraud_check.call_api' (3s, marked ERROR with " +
                         "a timeout event) and 'fraud_check.retry' (2s, succeeds). " +
-                        "The 'order.reserve_inventory' span shows many small child DB query spans " +
-                        "from the N+1 query pattern -- each individual lookup is visible. " +
+                        "The 'order.reserve_inventory' span shows many small child 'vaadin.db.query' spans " +
+                        "from the N+1 query pattern -- each individual lookup is visible, with its SQL in " +
+                        "the 'db.statement' attribute. " +
                         "Total trace duration ~6 seconds."));
         slowHint.setOpened(false);
 

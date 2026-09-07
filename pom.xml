@@ -11,23 +11,13 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- <vaadin.version>24.5.0.beta2</vaadin.version> -->
-        <!-- Keep this in step with the Observability Kit agent version below. The authoritative
-             pairing is the <observability.kit.starter.version> property in
+        <!-- Observability Kit 5 is a plain Micrometer library, not a Java agent, so there is no
+             agent version to keep in step any more. The kit version is pinned by vaadin-bom:
+             see <observability.kit.starter.version> in
              https://repo1.maven.org/maven2/com/vaadin/vaadin-bom/{VERSION}/vaadin-bom-{VERSION}.pom
-             For Vaadin 25.2.6 that is observability-kit 4.1.1. -->
-        <vaadin.version>25.2.6</vaadin.version>
-        <!-- How to figure this out? Check https://repo1.maven.org/maven2/com/vaadin/observability-kit/{VERSION}/observability-kit-{VERSION}.pom
-             for opentelemetry.javaagent.version and opentelemetry.version properties.
-             App classpath versions MUST be <= the agent's bundled versions, or Vaadin instrumentation silently fails. -->
-        <!-- For vaadin obskit 4.1.1: opentelemetry.javaagent.version=2.28.0, opentelemetry.version=1.62.0 -->
-        <!-- NOTE: kit version ordering is not monotonic - 4.0.1 bundles newer otel than 4.1.0.
-             Always read the POM for the exact version you are pinning. -->
-        <open.telemetry.annotation.version>2.28.0</open.telemetry.annotation.version>
-        <open.telemetry.api.version>1.62.0</open.telemetry.api.version>
-        <!-- Agent version. Must match observability-kit/_downloadAgent.sh and the -javaagent
-             path in the 'it' profile below. -->
-        <observability.kit.agent.version>4.1.1</observability.kit.agent.version>
+             For Vaadin 25.3.0-beta1 that is observability-kit 5.0.0-beta1. Obskit 5 requires
+             Vaadin 25.3+, Java 21 and Spring Boot 4. -->
+        <vaadin.version>25.3.0-beta1</vaadin.version>
     </properties>
 
     <parent>
@@ -123,17 +113,32 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Custom spans/annotations https://vaadin.com/docs/latest/tools/observability/customization#customizing-traces -->
+        <!-- Observability Kit 5: plain Micrometer library, auto-configures on the classpath.
+             Version comes from vaadin-bom (observability.kit.starter.version). -->
         <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
-            <version>${open.telemetry.annotation.version}</version>
+            <groupId>com.vaadin</groupId>
+            <artifactId>observability-kit-starter</artifactId>
         </dependency>
-
+        <!-- Actuator: ObservationRegistry, /actuator/prometheus and the kit's /actuator/vaadin insights endpoint -->
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-            <version>${open.telemetry.api.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- OTLP export of metrics + traces (micrometer-registry-otlp, micrometer-tracing-bridge-otel, otlp exporter) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
+        </dependency>
+        <!-- @Observed / @Timed / @Counted are AOP aspects; without this they silently do nothing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
+        </dependency>
+        <!-- Optional alternative to OTLP push: lets Prometheus scrape /actuator/prometheus.
+             Also the quickest way to eyeball exact meter names locally. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- Tests -->
@@ -252,7 +257,11 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <jvmArguments>-Xmx3G -javaagent:"target/observability-kit-agent-${observability.kit.agent.version}.jar" -Dotel.javaagent.configuration-file="observability-kit/agent-configs/agent-grafana.properties"</jvmArguments>
+                            <jvmArguments>-Xmx3G</jvmArguments>
+                            <!-- Exports metrics and traces to the local Grafana stack's OTel collector -->
+                            <profiles>
+                                <profile>grafana</profile>
+                            </profiles>
                         </configuration>
                     </plugin>
 

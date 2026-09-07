@@ -1,8 +1,10 @@
 #!/bin/sh
-#Variables
-AGENT_JAR_PATH=./target
-#APP_JAR - will be populated later...
-#AGENT_JAR - will be populated later...
+# Starts the demo app with the 'newrelic' Spring profile, which points Observability Kit 5's
+# OTLP exporters at New Relic's EU endpoints. There is nothing to run locally.
+#
+# Run from the observability-kit directory:
+#   NEW_RELIC_LICENSE_KEY=eu01xx...NRAL ./startObservabilityNewRelic.sh
+# Requires a production build first:  ./mvnw clean package -Pproduction
 
 ##Exit hook for cleanup...
 onExit(){
@@ -14,29 +16,18 @@ trap 'onExit' EXIT
 ##Bring down containers on Ctrl + c
 trap 'onExit' 2
 
-APP_JAR=$(ls ../target/kitstest*.jar)
+if [ -z "$NEW_RELIC_LICENSE_KEY" ]; then
+  echo "Set NEW_RELIC_LICENSE_KEY to your New Relic ingest license key first." >&2
+  exit 1
+fi
+
+# Just the file name; the app is launched from the project root below.
+APP_JAR=$(basename "$(ls ../target/kitstest*.jar)")
 echo "App jar detected under target/$APP_JAR"
 
-echo 'Checking for agent jar, downloading if necessary...'
-./_downloadAgent.sh
-
-# Take the jar name from _downloadAgent.sh so there is one source of truth for the
-# agent version. A glob would break as soon as an older agent jar is left in target/.
-AGENT_JAR=$(sed -n 's/^AGENT_JAR=//p' ./_downloadAgent.sh)
-echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
-
-
-cd ../target
-echo "Checking for agent JAR and downloading if necessary"
-if [ -f "$AGENT_JAR" ]; then
-  echo "Agent JAR already downloaded..."
-else
-  wget http://tools.vaadin.com/nexus/content/repositories/vaadin-prereleases/com/vaadin/observability/vaadin-opentelemetry-javaagent/1.0.0.rc1/vaadin-opentelemetry-javaagent-1.0.0.rc1.jar
-fi
 cd ..
 
 echo "App on port 8080, new relic on https://one.eu.newrelic.com/"
 echo "Starting demo app in 3 seconds..."
 sleep 3s
-java -Xmx3G -javaagent:"$AGENT_JAR_PATH"/"$AGENT_JAR"      -Dotel.javaagent.configuration-file=./observability-kit/agent-configs/agent-new-relic.properties  -jar ./target/"$APP_JAR"
-
+java -Xmx3G -jar ./target/"$APP_JAR" --spring.profiles.active=newrelic

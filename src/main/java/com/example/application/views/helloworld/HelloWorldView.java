@@ -12,9 +12,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 
 @PageTitle("Hello World")
 @Route(value = "hello", layout = MainLayout.class)
@@ -23,23 +22,18 @@ public class HelloWorldView extends VerticalLayout {
     private TextField name;
     private Button sayHello;
 
-    public HelloWorldView() {
+    public HelloWorldView(ObservationRegistry observationRegistry) {
         add(new H1("Custom span/attribute example"));
         add(new Text("Look for a span 'My Custom Span' and/or a span attribute: 'hello.value' with the value from the TextField")); 
         name = new TextField("Your name");
         sayHello = new Button("Say hello");
-        sayHello.addClickListener(e -> {
-
-            Tracer trace = GlobalOpenTelemetry.getTracer("app-instrumentation", "1.0.0"); 
-            final Span span = trace.spanBuilder("My Custom Span").startSpan();
-
-            try{
-                span.setAttribute("hello.value", name.getValue());
-                Notification.show("Hello " + name.getValue());
-            } finally {
-                span.end();
-            }
-        });
+        sayHello.addClickListener(e ->
+                // A plain Micrometer observation. It nests under the kit's vaadin.rpc span
+                // because it is started on the request thread.
+                Observation.createNotStarted("app.hello", observationRegistry)
+                        .contextualName("My Custom Span")
+                        .highCardinalityKeyValue("hello.value", String.valueOf(name.getValue()))
+                        .observe(() -> Notification.show("Hello " + name.getValue())));
         sayHello.addClickShortcut(Key.ENTER);
 
         HorizontalLayout hl = new HorizontalLayout(name, sayHello); 
