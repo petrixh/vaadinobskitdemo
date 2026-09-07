@@ -1,12 +1,14 @@
 #!/bin/sh
+# Starts the local Grafana stack (OTel collector, Tempo, Prometheus, Loki, Grafana) and then
+# the demo app with the 'grafana' Spring profile, which points Observability Kit 5's OTLP
+# exporters at the collector on localhost:4318.
+#
+# Run from the observability-kit directory:  ./startObservabilityGrafana.sh
+# Requires a production build first:         ./mvnw clean package -Pproduction
+
 #Variables
-AGENT_JAR_PATH=./target
-AGENT_CONFIG_FILE=./observability-kit/agent-configs/agent-grafana.properties
 GRAFANA_DIR=observability-grafana-setup
 #APP_JAR - will be populated later...
-#AGENT_JAR - will be populated later...
-
-
 
 ##Exit hook for cleanup...
 onExit(){
@@ -24,18 +26,11 @@ trap 'onExit' EXIT
 ##Bring down containers on Ctrl + c
 trap 'onExit' 2
 
-APP_JAR=$(ls ../target/kitstest*.jar)
+# Just the file name; the app is launched from the project root below.
+APP_JAR=$(basename "$(ls ../target/kitstest*.jar)")
 echo "App jar detected under target/$APP_JAR"
 
-echo 'Checking for agent jar, downloading if necessary...'
-./_downloadAgent.sh
-
-# Take the jar name from _downloadAgent.sh so there is one source of truth for the
-# agent version. A glob would break as soon as an older agent jar is left in target/.
-AGENT_JAR=$(sed -n 's/^AGENT_JAR=//p' ./_downloadAgent.sh)
-echo "Vaadin Observability Kit Agent jar detected under target/$AGENT_JAR"
-
-echo "Updating grafana docker submodule project" 
+echo "Updating grafana docker submodule project"
 git submodule update --init --recursive
 
 echo "Pulling grafana images..."
@@ -47,13 +42,10 @@ docker compose up -d
 cd ..
 cd ..
 
-
 echo "App will be on port 8080, Grafana on port 3000"
 echo "Starting demo app... in 5 seconds"
 sleep 5s
-java -Xmx3G -javaagent:"$AGENT_JAR_PATH"/"$AGENT_JAR" -Dotel.javaagent.configuration-file="$AGENT_CONFIG_FILE"  -jar ./target/"$APP_JAR"
+java -Xmx3G -jar ./target/"$APP_JAR" --spring.profiles.active=grafana
 
 echo "Exiting..."
 onExit
-
-

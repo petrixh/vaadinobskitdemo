@@ -2,13 +2,12 @@ package com.example.application.data.service;
 
 import com.example.application.data.entity.CustomerOrder;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class FraudCheckService {
@@ -17,56 +16,63 @@ public class FraudCheckService {
         APPROVED, DECLINED
     }
 
-    private final Tracer tracer = GlobalOpenTelemetry.getTracer("order-processing", "1.0.0");
+    private final ObservationRegistry registry;
 
-    @WithSpan("order.fraud_check")
+    public FraudCheckService(ObservationRegistry registry) {
+        this.registry = registry;
+    }
+
+    @Observed(name = "order.fraud_check", contextualName = "order.fraud_check")
     public FraudResult checkFraud(CustomerOrder order, String scenario) {
-        Span span = Span.current();
-        span.setAttribute("fraud.provider", "acme-fraud-api");
-        span.setAttribute("fraud.customer_email", order.getCustomerEmail());
+        Observation obs = Observations.current(registry);
+        obs.lowCardinalityKeyValue("fraud.provider", "acme-fraud-api");
+        obs.highCardinalityKeyValue("fraud.customer_email", String.valueOf(order.getCustomerEmail()));
 
         if ("slow".equals(scenario)) {
-            return slowFraudCheck(span, order);
+            return slowFraudCheck(obs, order);
         }
 
         // Happy and error paths: quick check
         simulateWork(100);
-        span.setAttribute("fraud.score", 12);
-        span.setAttribute("fraud.result", "approved");
-        span.setAttribute("fraud.latency_ms", 100);
+        obs.highCardinalityKeyValue("fraud.score", "12");
+        obs.lowCardinalityKeyValue("fraud.result", "approved");
+        obs.highCardinalityKeyValue("fraud.latency_ms", "100");
         return FraudResult.APPROVED;
     }
 
-    private FraudResult slowFraudCheck(Span parentSpan, CustomerOrder order) {
-        // First attempt: times out after 3 seconds
-        Span callSpan = tracer.spanBuilder("fraud_check.call_api")
-                .startSpan();
-        try (Scope ignored = callSpan.makeCurrent()) {
-            callSpan.setAttribute("fraud.attempt", 1);
+    private FraudResult slowFraudCheck(Observation parentObservation, CustomerOrder order) {
+        // First attempt: times out after 3 seconds.
+        // Child observations pick up the parent from the registry when they are started.
+        Observation callObservation = Observation
+                .createNotStarted("fraud_check.call_api", registry)
+                .lowCardinalityKeyValue("fraud.attempt", "1")
+                .start();
+        try (Observation.Scope ignored = callObservation.openScope()) {
             simulateWork(3000);
-            callSpan.addEvent("fraud.timeout");
-            callSpan.setAttribute("fraud.timeout", true);
-            callSpan.setStatus(StatusCode.ERROR, "API call timed out");
+            callObservation.event(Observation.Event.of("fraud.timeout"));
+            callObservation.lowCardinalityKeyValue("fraud.timeout", "true");
+            callObservation.error(new TimeoutException("API call timed out"));
         } finally {
-            callSpan.end();
+            callObservation.stop();
         }
 
         // Retry: succeeds after 2 seconds
-        Span retrySpan = tracer.spanBuilder("fraud_check.retry")
-                .startSpan();
-        try (Scope ignored = retrySpan.makeCurrent()) {
-            retrySpan.setAttribute("fraud.attempt", 2);
+        Observation retryObservation = Observation
+                .createNotStarted("fraud_check.retry", registry)
+                .lowCardinalityKeyValue("fraud.attempt", "2")
+                .start();
+        try (Observation.Scope ignored = retryObservation.openScope()) {
             simulateWork(2000);
-            retrySpan.setAttribute("fraud.score", 15);
-            retrySpan.setAttribute("fraud.result", "approved");
+            retryObservation.highCardinalityKeyValue("fraud.score", "15");
+            retryObservation.lowCardinalityKeyValue("fraud.result", "approved");
         } finally {
-            retrySpan.end();
+            retryObservation.stop();
         }
 
-        parentSpan.setAttribute("fraud.score", 15);
-        parentSpan.setAttribute("fraud.result", "approved");
-        parentSpan.setAttribute("fraud.retry_count", 1);
-        parentSpan.setAttribute("fraud.total_latency_ms", 5000);
+        parentObservation.highCardinalityKeyValue("fraud.score", "15");
+        parentObservation.lowCardinalityKeyValue("fraud.result", "approved");
+        parentObservation.highCardinalityKeyValue("fraud.retry_count", "1");
+        parentObservation.highCardinalityKeyValue("fraud.total_latency_ms", "5000");
         return FraudResult.APPROVED;
     }
 

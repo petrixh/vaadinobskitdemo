@@ -2,14 +2,18 @@
 
 ![Order Processing View](demo-view-initial.png)
 
-The Order Processing view simulates a multi-step order workflow with three scenario buttons that each produce different trace patterns. This document describes the pipeline and the OpenTelemetry traces it produces across all three scenarios.
+The Order Processing view simulates a multi-step order workflow with three scenario buttons that each produce different trace patterns. This document describes the pipeline and the Micrometer observations (exported as OpenTelemetry spans) it produces across all three scenarios.
+
+The whole pipeline hangs under Observability Kit's own spans for the button click:
+`http post /order-processing` -> `vaadin.request.rpc` -> `vaadin.rpc.event` -> `order.process`.
+The custom observations nest there automatically because they are started on the request thread.
 
 ## Pipeline Overview
 
 ```mermaid
 flowchart TD
     UI["OrderProcessingView<br/><i>User submits order</i>"]
-    PROC["order.process<br/><i>root span</i>"]
+    PROC["order.process<br/><i>parent of the step spans</i>"]
     DB0[("DB: save<br/>status = PENDING")]
     VAL["order.validate<br/><i>~50ms</i>"]
     DB1[("DB: save<br/>status = VALIDATED")]
@@ -37,7 +41,12 @@ flowchart TD
     style DB4 fill:#444,color:#ccc
 ```
 
-Each box with a green background is a `@WithSpan`-annotated method that creates an explicit OpenTelemetry span. The grey database nodes are auto-instrumented JPA operations (INSERT/UPDATE) that appear as child spans of the step that triggered them.
+Each box with a green background is an `@Observed`-annotated method that creates an explicit
+Micrometer observation — a span in Tempo and a timer in Prometheus at the same time. The grey
+database nodes are the kit's own `vaadin.db.query` spans (opt-in via
+`vaadin.observability.database=true`), which carry `db.rows` and, with
+`vaadin.observability.database-statement=true`, the parameterised SQL as `db.statement`. They
+appear as child spans of the step that triggered them.
 
 ## Scenario: Happy Path (~480ms)
 
@@ -50,7 +59,7 @@ gantt
     axisFormat %Lms
 
     section order.process
-    Root span                         :0, 480
+    Parent span                       :0, 480
 
     section   order.validate
     Validate order                    :0, 50
@@ -64,11 +73,11 @@ gantt
     section   order.process_payment
     Process payment                   :230, 380
 
-    section   DB (auto-instrumented)
+    section   vaadin.db.query
     INSERT/UPDATE (status changes)    :milestone, 0, 0
 ```
 
-**What to look for in Grafana:** A balanced waterfall where each step takes a proportional amount of time. All spans are green/OK. Between each step you'll see auto-instrumented JPA `INSERT` and `UPDATE` spans from the status persistence.
+**What to look for in Grafana:** A balanced waterfall where each step takes a proportional amount of time. All spans are green/OK. Between each step you'll see `vaadin.db.query` spans from the status persistence.
 
 ## Scenario: Slow Path (~6s)
 
@@ -81,7 +90,7 @@ gantt
     axisFormat %Lms
 
     section order.process
-    Root span                             :0, 6000
+    Parent span                           :0, 6000
 
     section   order.validate
     Validate order                        :0, 50
@@ -98,7 +107,7 @@ gantt
     section   order.reserve_inventory
     Inventory (N+1 queries)               :5050, 5400
 
-    section     DB queries (x10)
+    section     vaadin.db.query (x10)
     Individual lookups (30ms each)        :5050, 5350
 
     section   order.process_payment
@@ -108,7 +117,9 @@ gantt
 **What to look for in Grafana:**
 - The `fraud_check.call_api` child span dominates at ~3s and is marked **ERROR** with a `fraud.timeout` event
 - The `fraud_check.retry` child span succeeds after ~2s
-- The `order.reserve_inventory` span contains **many small DB query spans** — this is the N+1 anti-pattern, visible as a cascade of individual `SELECT` operations
+- The `order.reserve_inventory` span contains **many small `vaadin.db.query` spans** — this is the N+1 anti-pattern, visible as a cascade of individual `SELECT` operations
+- The same N+1 also shows up as metrics: `vaadin_db_query_milliseconds_count` and
+  `vaadin_db_fetch_rows_sum`, both tagged by `route`
 - Total duration is ~6s vs ~480ms on the happy path
 
 ## Scenario: Error Path (~380ms)
@@ -143,9 +154,17 @@ flowchart TD
 - Span attributes show `payment.decline_reason = insufficient_funds` and `payment.error_code = card_declined`
 - The parent `order.process` span also shows ERROR with `order.failure_step = Payment`
 - The trace is **shorter** than the happy path because processing stops at the payment step
-- This trace appears in both the **Traces** and **Errors** dashboard panels
+- This trace appears in both the **Traces** and **Error traces** dashboard panels
 
 ## Span Attributes Reference
+
+Under Micrometer, an observation's key values come in two flavours. **Low cardinality** values
+become both span attributes and Prometheus tags on the observation's timer; **high cardinality**
+values are span-only. The bounded ones below (`order.scenario`, `order.status`,
+`order.failure_step`, `order.validation.result`, `fraud.result`, `fraud.provider`,
+`inventory.warehouse`, `payment.gateway`, `payment.currency`, `payment.status`,
+`payment.error_code`) are low cardinality; ids, names, e-mails, amounts and durations are high
+cardinality so they never explode the metric label space.
 
 | Span | Key Attributes |
 |------|----------------|

@@ -9,19 +9,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-    # The app-classpath OpenTelemetry versions are capped by whatever the
-    # Observability Kit AGENT bundles (see the comment in pom.xml). Going above the
-    # agent's versions makes Vaadin instrumentation fail SILENTLY - the build and the
-    # standard OTel traces still work, only the Vaadin spans quietly disappear.
-    # These caps match observability-kit 4.1.1 (otel 1.62.0 / javaagent 2.28.0).
-    # When the agent version in observability-kit/_downloadAgent.sh changes, re-read
-    # https://repo1.maven.org/maven2/com/vaadin/observability-kit/{VERSION}/observability-kit-{VERSION}.pom
-    # and update these two bounds to match.
-    ignore:
-      - dependency-name: "io.opentelemetry:opentelemetry-api"
-        versions: [">1.62.0"]
-      - dependency-name: "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations"
-        versions: [">2.28.0"]
     groups:
       minor-and-patch-updates:
         patterns:
