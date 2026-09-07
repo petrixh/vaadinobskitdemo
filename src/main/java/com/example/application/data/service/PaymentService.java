@@ -52,7 +52,8 @@ public class PaymentService {
                     "insufficient_funds", "card_declined");
             obs.lowCardinalityKeyValue("payment.decline_reason", "insufficient_funds");
             obs.lowCardinalityKeyValue("payment.error_code", "card_declined");
-            obs.error(ex);
+            // No obs.error(ex) here: the exception propagates out of this @Observed method, so the
+            // aspect records it. Calling error() as well would record the exception event twice.
             throw ex;
         }
 

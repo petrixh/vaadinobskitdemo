@@ -199,9 +199,9 @@ public class PlaywrightIT {
                 () -> "No vaadin.db.query span reached Tempo. Check "
                         + "vaadin.observability.database=true in application.properties.");
 
-        // The Error Path exercises the other half of the port: PaymentService marks its
-        // observation with obs.error(ex), and OrderProcessingService.fail does the same for the
-        // exception it swallows. Neither is covered by @Observed's own exception handling.
+        // The Error Path exercises the other half of the port. PaymentService throws out of its
+        // @Observed method, so the aspect marks that span errored; OrderProcessingService.fail
+        // swallows the same exception and has to call obs.error(e) by hand for order.process.
         page.getByRole(AriaRole.BUTTON,
                 new Page.GetByRoleOptions().setName("Error Path").setExact(true)).click();
         assertThat(page.getByText("Order failed at: Payment")).isVisible();
