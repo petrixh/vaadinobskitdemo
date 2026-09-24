@@ -16,7 +16,7 @@
              pairing is the <observability.kit.starter.version> property in
              https://repo1.maven.org/maven2/com/vaadin/vaadin-bom/{VERSION}/vaadin-bom-{VERSION}.pom
              For Vaadin 25.2.6 that is observability-kit 4.1.1. -->
-        <vaadin.version>25.2.6</vaadin.version>
+        <vaadin.version>25.2.8</vaadin.version>
         <!-- How to figure this out? Check https://repo1.maven.org/maven2/com/vaadin/observability-kit/{VERSION}/observability-kit-{VERSION}.pom
              for opentelemetry.javaagent.version and opentelemetry.version properties.
              App classpath versions MUST be <= the agent's bundled versions, or Vaadin instrumentation silently fails. -->
@@ -159,7 +159,7 @@
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.62.0</version> <!-- Check the latest version via https://playwright.dev and also update playwright/docker-compose.yml -->
+            <version>1.63.0</version> <!-- Check the latest version via https://playwright.dev and also update playwright/docker-compose.yml -->
             <scope>test</scope>
         </dependency>
         
