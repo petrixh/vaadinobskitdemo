@@ -6,6 +6,7 @@ import com.example.application.views.helloworld.HelloWorldView;
 import com.example.application.views.imagelist.ImageListView;
 import com.example.application.views.masterdetailopt.OptMasterDetailView;
 import com.example.application.views.masterdetailslow.MasterDetailView;
+import com.example.application.views.orderprocessing.OrderProcessingView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Footer;
@@ -64,6 +65,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
         nav.addItem(new SideNavItem("Image List", ImageListView.class, VaadinIcon.PICTURE.create()));
         nav.addItem(new SideNavItem("Master-Detail", MasterDetailView.class, VaadinIcon.TABLE.create()));
         nav.addItem(new SideNavItem("Opt Master-Detail", OptMasterDetailView.class, VaadinIcon.TABLE.create()));
+        nav.addItem(new SideNavItem("Order Processing", OrderProcessingView.class, VaadinIcon.CART.create()));
 
         return nav;
     }
